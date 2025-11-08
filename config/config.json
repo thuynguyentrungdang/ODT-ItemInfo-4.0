@@ -1,0 +1,150 @@
+{
+	"_SELECT YOUR LANGUAGE IN UserLocale CONFIGURATION BELOW. USE ONE OF THESE LANGUAGE CODES": "ch, cz, en, es-mx, es, fr, ge, hu, it, jp, kr, pl, po, ru, sk, tu",
+	"UserLocale": "en",
+	"HideLanguageAlert": true,
+	"FormatPrice": true,
+	"PricesInfo": {
+		"_description": "Basic module that adds prices information to item description, includes avarage flea price and best trader to sell to. Separate option to hide flea price info. addItemValue uses plain BSG handbook/traders data.",
+		"_example": "Flea price: 61703₽ | Ragman's valuation: 37386₽",
+		"enabled": true,
+		"addFleaPrice": true,
+		"addItemValue": true
+	},
+	"RarityRecolor": {
+		"_description": "This feature clears and changes background color on EVERY item in the game based on MMO style rarity tier-list with colors that make actual sense. Tiers are based on trader level you can purchase or barter the item. Barters are considered +1 rarity level. If item is unbuyable, calculates rarity based on item in-game per-slot value and uses thresholds set in tiers config. Banned on flea market items are given highest rarity - overpowered. The tier list: Common (grey background, bought with level 1 traders OR under 10k) > Rare (blue, level 2 trades for currency and level 1 barters OR under 20k) > Epic (purple, level 3 and level 2 barters OR under 30k) > Legendary (dim yellow, level 4 and level 3 barters OR under 40k) > Uber (bright yellow, level 4 barters only OR under 60k) > UNOBTAINIUM (bright green, super valuable items worth over 60k per slot) > OP (bright red, banned on flea market) > CUSTOM (dim red, not used by default). Works for 95% of items well enough to be very much usable. Can add tier name to PricesInfo module.",
+		"enabled": true,
+		"addTierNameToPricesInfo": true,
+		"fallbackValueBasedRecolor": true,
+		"_description_fallbackValueBasedRecolor": "If item is unbuyable from traders, fallsback to slot value rarity tiering.",
+		"bypassAmmoRecolor": false,
+		"bypassKeysRecolor": false,
+		"customRarity": {
+			"59faff1d86f7746c51718c9c": 6,
+			"5c0530ee86f774697952d952": 6,
+			"5efb0c1bd79ff02a1f5e68d9": 7,
+			"601949593ae8f707c4608daa": 7,
+			"59e0d99486f7744a32234762": 6,
+			"601aa3d2b2bcb34913271e6d": 7,
+			"61962b617c6c7b169525f168": 6,
+			"56dff0bed2720bb0668b4567": 2,
+			"59e6920f86f77411d82aa167": 2,
+			"635267f063651329f75a4ee8": 8,
+			"5732ee6a24597719ae0c0281": 1,
+			"544a11ac4bdc2d470e8b456a": 2,
+			"5857a8b324597729ab0a0e7d": 3,
+			"59db794186f77448bc595262": 4,
+			"5857a8bc2459772bad15db29": 5,
+			"5c093ca986f7740a1867ab12": 6,
+			"66b5f693acff495a294927e3": 6,
+			"66b5f6985891c84aab75ca76": 7,
+			"5c0e874186f7745dc7616606": 7,
+			"60a7acf20c5cb24b01346648": 7
+		}
+	},
+	"RarityRecolorBlacklist": [
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
+	],
+	"MarkValueableItems": {
+		"_description": "Marks most valuable items by adding symbols ★ and ☆ to item names and inventory icons based on item per-slot value (configured below) when sold to traders OR fleamarket AVG price. Defaults: ☆ - good items - item value per slot is more then 10k when sold to vendors, or more then 15k on flea market. ★ best items - item value per slot is more then 20k to vendors, or more then 30k on flea market. Use really high values if you want to disable certain type of highlights, eg flea ones. Option to *always* mark banned items with a ★.",
+		"_example": "",
+		"enabled": true,
+		"addToName": true,
+		"addToShortName": true,
+		"BestValueMark": "★",
+		"GoodValueMark": "☆",
+		"AltBestValueMark": "●",
+		"AltGoodValueMark": "○",
+		"useAltValueMarks": false,
+		"traderSlotValueThresholdBest": 20000,
+		"fleaSlotValueThresholdBest": 30000,
+		"traderSlotValueThresholdGood": 10000,
+		"fleaSlotValueThresholdGood": 15000,
+		"alwaysMarkBannedItems": true
+	},
+	"BulletStatsInName": {
+		"_description": "Adds bullet stats to bullet name (damage / armor penetration). Calculates total damage for buckshot rounds. VERY usefull in raid, because bullet name is shown when check magazine action is used.",
+		"_example": "5.45x39mm PP gs (44/36)",
+		"enabled": true
+	},
+	"ArmorInfo": {
+		"_description": "Adds armor stats for armor level (usefull for Realism mod), effective durability calculation, material quality and per repair degradation.",
+		"enabled": true,
+		"_example": "[BNTI Zhuk-6a body armor] Armor class: 6 | Effective durability: 94 (Max: 75 x Ceramic: 1.3) | Repair degradation: 17% - 22%",
+		"addArmorClassInfo": true,
+		"addArmorToName": true,
+		"addArmorToShortName": true
+	},
+	"AdvancedAmmoInfo": {
+		"_description": "Adds hidden and advanced ammo stats. Way too descriptive, disabled by default.",
+		"enabled": true
+	},
+	"ContainerInfo": {
+		"_description": "Adds slot efficiency calculation for rigs, backpacks and containers (number of internal slots / item size).",
+		"_example": "[WARTECH TV-110 plate carrier rig] Slot efficiency: ×1.92 (23/12)",
+		"enabled": true
+	},
+	"HeadsetInfo": {
+		"_description": "Adds headset actual audio stats with pseudo compression boost calculation. In theory, more compression  and lower ambient volume = better (BSG headset rarity tiering supports this theory), but it seems for me, in practice, it's not always the case in-game. Higher resonance means harsher sound and boost at filter frequency.",
+		"_example": "[Peltor ComTac 2 headset] Ambient Volume: -5dB | Compressor: Gain 10dB × Treshold -25dB ≈ ×2.5 Boost | Resonance & Filter: 2.47@245Hz | Distortion: 28%",
+		"enabled": true
+	},
+	"ProductionInfo": {
+		"_description": "If item can be crafted, adds information on resources and total crafting sum per item based on flea prices.",
+		"_example": "[9x19mm AP 6.3] Crafted ×150 @ Workbench lv.2 < ☆Hawk ×2 + ☆Pst ×400 | Σ per item ≈ 1686₽",
+		"enabled": true
+	},
+	"CraftingMaterialInfo": {
+		"_description": "Shows if item is used in crafts along with other materials and profit delta based on flea prices only (this messes up calculation on some crafts that can be done insanely cheap using trader materials or items obtained from other crafts). This is a guideline for crafting profits, not a rule.",
+		"_example": "[SSD drive] Part ×1 > Secure Flash drive ×3 @ Intelligence Center lv.2 < … + ★GPX ×1 + ☆GPhone ×1 | Δ ≈ 16234₽",
+		"enabled": true
+	},
+	"BarterInfo": {
+		"_description": "Adds information about how you can buy the item from traders, their levels, price or resources (barter resources short names are used and total sum is based on AVG flea prices).",
+		"_example": "[T H I C C item case] Bought @ Therapist lv.4 < ★Defibrillator ×15 + ★LEDX ×15 + Ibuprofen ×15 + ★Toothpaste ×15 | Σ ≈ 12877545₽",
+		"enabled": true
+	},
+	"QuestInfo": {
+		"_description": "Adds information if the item needs to be handed in for a quest. Marks find in raid quest condition with a checkmark with an option to add this checkmark to an item name.",
+		"_example": "[CMS surgical kit] Found (✔) ×2 > Ambulance @ Jaeger",
+		"enabled": true,
+		"FIRinName": true
+	},
+	"HideoutInfo": {
+		"_description": "Shows if item is needed for hideout construcion.",
+		"_example": "[Secure Flash drive] Need ×3 > Intelligence Center lv.2",
+		"enabled": true
+	},
+	"BarterResourceInfo": {
+		"_description": "Shows info if an item can be traded for something with traders along with other resources. Calculates total sum of all resourses (based on flea prices) and delta between buying the final item directly on flea or from trader. Positive delta = profit, negative = don't bother, buy it directly if you can.",
+		"_example": "[Ibuprofen painkillers] Traded ×15 @ Therapist lv.4 > T H I C C item case < … + ★Defibrillator ×15 + ★LEDX ×15 + ★Toothpaste ×15 | Δ ≈ -9777545₽",
+		"enabled": true
+	},
+	"delay": {
+		"_description": "Delay loading the mod for compatibility reasons (mods that add items in a weird way, or mods that take too long to load like Lua's Flea Market Price Updater).",
+		"enabled": false,
+		"seconds": 5
+	},
+	"useBSGStaticFleaBanlist": {
+		"_description": "For compatibility reasons with other mods that modify flea banned items",
+		"enabled": false
+	},
+	"SoftcoreAmmoStackMultiFix": {
+		"_description": "Enable if using Softcore's Bigger_Ammo_Stacks",
+		"enabled": false
+	},
+	"dummy": {
+		"_description": "",
+		"enabled": true
+	},
+	"dummyend": true
+}

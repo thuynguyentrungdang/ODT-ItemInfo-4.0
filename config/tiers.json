@@ -1,0 +1,17 @@
+{
+	"COMMON": "default",
+	"RARE": "blue",
+	"EPIC": "violet",
+	"LEGENDARY": "yellow",
+	"UBER": "tracerYellow",
+	"UNOBTAINIUM": "tracerGreen",
+	"OVERPOWERED": "tracerRed",
+	"CUSTOM": "red",
+	"CUSTOM2": "orange",
+	"UNKNOWN": "green",
+	"COMMON_VALUE_FALLBACK": "9999",
+	"RARE_VALUE_FALLBACK": "19999",
+	"EPIC_VALUE_FALLBACK": "29999",
+	"LEGENDARY_VALUE_FALLBACK": "39999",
+	"UBER_VALUE_FALLBACK": "59999"
+}

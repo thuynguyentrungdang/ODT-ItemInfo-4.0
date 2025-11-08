@@ -1,0 +1,39 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <RootNamespace>ItemInfo</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <OutputType>Library</OutputType>
+        <Version>0.0.1</Version>
+        <!-- The two lines below will set the output path for the binaries -->
+        <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
+        <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="SPTarkov.Common" Version="4.0.3" />
+        <PackageReference Include="SPTarkov.DI" Version="4.0.3" />
+        <PackageReference Include="SPTarkov.Server.Core" Version="4.0.3" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <None Include="ODT-ItemInfo-4.0.csproj.user" />
+    </ItemGroup>
+
+    <PropertyGroup>
+        <SPTPath>F:\SPT_4.0\SPT</SPTPath>
+        <ModsDirectoryPath>$(SPTPath)\user\mods\$(MSBuildProjectName)</ModsDirectoryPath>
+    </PropertyGroup>
+
+    <Target Name="CopyToSPT" AfterTargets="AfterBuild" Condition="'$(SPTPath)' != ''">
+        <Message Importance="high" Text="Copying mods to $(ModsDirectoryPath)" />
+        <ItemGroup>
+            <FilesToCopy Include="$(OutputPath)$(TargetName)$(TargetExt)" />
+            <FilesToCopy Include="$(OutputPath)$(TargetName).pdb" />
+        </ItemGroup>
+        <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(ModsDirectoryPath)" ContinueOnError="false" />
+        <Message Text="Files copied" />
+    </Target>
+</Project>
