@@ -518,13 +518,9 @@ public static class Utils
 		    if (totalBarterPrice != 0)
 			    totalBarterPriceString = " | Σ ≈ " +  
 			                             FormatPrice(Math.Round(totalBarterPrice)) + 
-			                             "₽";
-		    temp = barterString.Remove(barterString.Length - 3, 3);
+			                             "₽"; 
 		    
-		    //barterString.Clear();
-		    barterString.Append(temp + 
-							   totalBarterPriceString + 
-							   "\n");
+		    barterString.Remove(barterString.Length - 3, 3).Append(totalBarterPriceString + "\n");
 	    }
 	    
 	    return (prices, barterString.ToString(), rarityArray.Count == 0 ? [0] : rarityArray);

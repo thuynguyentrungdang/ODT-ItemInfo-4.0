@@ -1,8 +1,8 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ItemInfo.Models;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
@@ -501,11 +501,17 @@ public class ItemInfo(
 
     private void ItemInfoMain()
     {
-	    logger.Info("[ItemInfo] ItemInfoMain");
+	    Stopwatch stopwatch = Stopwatch.StartNew();
+	    
+	    logger.Info("[ItemInfo] Processing items...");
 	    
 	    TranslationDebug();
 	    QuestRewards();
 	    ItemHandling();
+	    
+	    stopwatch.Stop();
+	    
+	    logger.Info("[ItemInfo] Completed in " + stopwatch.ElapsedMilliseconds + " ms.");
     }
 
     private void TranslationDebug()
@@ -647,8 +653,8 @@ public class ItemInfo(
 		    headsetDescription.Clear();
 		    advancedAmmoInfoString.Clear();
 		    
-		    logger.Info("Processing item " + (a + 1) + "/" + Items.Count + ": " + Utils.GetItemName(kvp.Key));
-		    a += 1;
+		    //logger.Info("Processing item " + (a + 1) + "/" + Items.Count + ": " + Utils.GetItemName(kvp.Key));
+		    //a += 1;
 		    
 		    MongoId itemId = kvp.Key;
 		    TemplateItem templateItem = kvp.Value;
