@@ -785,7 +785,8 @@ public static class Utils
 				double? craftComponentPrice = GetFleaPrice(craftComponentId!);
 				
 				if (craftComponentId is null ||
-				    craftComponentPrice is null)
+				    craftComponentPrice is null ||
+				    requirement.Count is null)
 					continue;
 					
 				switch (requirement.Type)
@@ -926,7 +927,9 @@ public static class Utils
 
 			foreach (Requirement requirement in requirements)
 			{
-				if (requirement.TemplateId != itemId) 
+				if (requirement.TemplateId is null ||
+				    requirement.TemplateId != itemId ||
+				    requirement.Count is null) 
 					continue;
 				
 				string usedForCraftingComponentString = " < … + ";
