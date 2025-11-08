@@ -425,6 +425,7 @@ public class ItemInfo(
 	public required Dictionary<ArmorMaterial, ArmorType> Armors { get; set; }
 	public required string UserLocale { get; set; }
 	public required Dictionary<string, string> i18n { get; set; }
+	public required Dictionary<string, string> Localization { get; set; }
 	
     public Task OnLoad()
     {
@@ -464,6 +465,7 @@ public class ItemInfo(
 	    Armors = databaseService.GetGlobals().Configuration.ArmorMaterials;
 	    UserLocale = Config.UserLocale;
 	    i18n = Translation.Language[UserLocale];
+	    Localization = localeService.GetLocaleDb(UserLocale);
 	    
         // Pass all the services and vars to Utils
         Utils.Initialize(databaseService, 
@@ -653,8 +655,8 @@ public class ItemInfo(
 		    headsetDescription.Clear();
 		    advancedAmmoInfoString.Clear();
 		    
-		    //logger.Info("Processing item " + (a + 1) + "/" + Items.Count + ": " + Utils.GetItemName(kvp.Key));
-		    //a += 1;
+		    logger.Info("Processing item " + (a + 1) + "/" + Items.Count + ": " + Utils.GetItemName(kvp.Key));
+		    a += 1;
 		    
 		    MongoId itemId = kvp.Key;
 		    TemplateItem templateItem = kvp.Value;
@@ -675,13 +677,17 @@ public class ItemInfo(
 			string name = Utils.GetItemName(itemId, UserLocale);
 			
 		    // Boilerplate defaults
-		    double fleaPrice = Utils.GetFleaPrice(itemId) ?? 
-		                       throw new NullReferenceException("fleaPrice is null");
+		    double fleaPrice = Utils.GetFleaPrice(itemId) ?? 0;
 		    string fleaPriceString = fleaPrice.ToString(CultureInfo.CurrentCulture);
 		    
 		    ValueTuple<double?, string, string> itemBestVendor = Utils.GetItemBestTrader(itemId);
-		    double traderPrice = Math.Round(itemBestVendor.Item1 ?? 
-		                                    throw new NullReferenceException("Item \"" + name + "\" traderPrice is null"));
+
+		    double? price = itemBestVendor.Item1;
+		    
+		    if (price is null)
+			    continue;
+		    
+		    double traderPrice = Math.Round((double)price);
 		    string itemBestTraderName = itemBestVendor.Item2;
 		    int slotDensity = Utils.GetItemSlotDensity(itemProperties);
 		    List<Utils.ResolvedBarter> itemBarters = Utils.BarterResolver(itemId);
@@ -696,8 +702,7 @@ public class ItemInfo(
 		    if (Config.UseBsgStaticFleaBanList.Enabled)
 			    isBanned = true;
 		    else
-			    isBanned = !Items[itemId].Properties?.CanSellOnRagfair ?? 
-			               throw new NullReferenceException("Item \"" + name + "\".CanSellOnRagfair is null");
+			    isBanned = !itemProperties.CanSellOnRagfair ?? false;
 
 		    // Rarity handling
 		    if (isBanned)
@@ -726,28 +731,24 @@ public class ItemInfo(
 		    {
 			    IEnumerable<StackSlot>? stackSlots = itemProperties.StackSlots;
 			    List<StackSlot>? stackSlotsList = stackSlots?.ToList();
-			    
-			    if (stackSlotsList is null)
-				    throw new NullReferenceException("stackSlotsList is null");
 
-			    double count = stackSlotsList[0].MaxCount ??
-			                   throw new NullReferenceException("Item \"" + 
-			                                                    name + 
-			                                                    "\" count is null");
-			    MongoId ammo = stackSlotsList[0].Properties?.Filters?.ToList()[0].Filter?.ToList()[0] ??
-			                   throw new NullReferenceException("Item \"" + 
-			                                                    name + 
-			                                                    "\" ammo is null");
-			    double value = Utils.GetItemBestTrader(itemId).price ??
-			                   throw new NullReferenceException("Item \"" + 
-			                                                    name + 
-			                                                    "\".value is null");
-			    traderPrice = value * count;
-
-			    if (itemRarity is 0 or 7)
-				    itemRarity = BsgBlacklist.Contains(ammo)
-					    ? 7
-					    : Utils.BarterInfoGenerator(Utils.BarterResolver(ammo)).rarityArray.Min();
+			    if (stackSlotsList is not null)
+			    {
+				    double? count = stackSlotsList[0].MaxCount;
+				    MongoId? ammo = stackSlotsList[0].Properties?.Filters?.ToList()[0].Filter?.ToList()[0];
+				    double? value = Utils.GetItemBestTrader(itemId).price;
+				    
+				    if (value is not null &&
+				        count is not null)
+						traderPrice = (double)(value * count);
+				    else
+					    traderPrice = 0;
+				    
+				    if (itemRarity is 0 or 7)
+					    itemRarity = BsgBlacklist.Contains(ammo ?? "")
+						    ? 7
+						    : Utils.BarterInfoGenerator(Utils.BarterResolver(ammo ?? "")).rarityArray.Min();
+			    }
 		    }
 
 		    // BulletStatsInName
@@ -757,10 +758,8 @@ public class ItemInfo(
 			    double damageMult = 1;
 
 			    if (itemProperties.AmmoType == "buckshot")
-				    damageMult = itemProperties.BuckshotBullets ??
-				                 throw new NullReferenceException("Item \"" + 
-				                                                  name +
-				                                                  "\" damageMult is null");
+				    damageMult = itemProperties.BuckshotBullets ?? 0;
+			    
 			    Utils.AddToName(itemId,
 				    " " +
 				    itemProperties.Damage * damageMult +
@@ -841,14 +840,8 @@ public class ItemInfo(
 				    if (Config.ModRarityRecolor.FallbackValueBasedRecolor &&
 				        itemRarity == 0)
 				    {
-					    double itemValue = itemInHandbook.Price ??
-					                       throw new NullReferenceException("Item \"" +
-					                                                        name +
-					                                                        "\" itemValue is null");
-					    int itemSlots = itemProperties.Width * itemProperties.Height ??
-					                    throw new NullReferenceException("Item \"" +
-					                                                     name +
-					                                                     "\" itemSlots is null");
+					    double itemValue = itemInHandbook.Price ?? 0;
+					    int itemSlots = itemProperties.Width * itemProperties.Height ?? 0;
 
 					    if (itemSlots > 1)
 						    itemValue = Math.Round(itemValue / itemSlots);
@@ -858,19 +851,13 @@ public class ItemInfo(
 						    IEnumerable<StackSlot>? stackSlots = itemProperties.StackSlots;
 						    List<StackSlot>? stackSlotsList = stackSlots?.ToList();
 
-						    if (stackSlotsList is null)
-							    throw new NullReferenceException("stackSlotsList is null");
+						    if (stackSlotsList is not null)
+						    {
+							    double count = stackSlotsList[0].MaxCount ?? 0;
+							    double value = Utils.GetItemBestTrader(itemId).price ?? 0;
 
-						    double count = stackSlotsList[0].MaxCount ??
-						                   throw new NullReferenceException("Item \"" +
-						                                                    name +
-						                                                    "\" count is null");
-						    double value = Utils.GetItemBestTrader(itemId).price ??
-						                   throw new NullReferenceException("Item \"" +
-						                                                    name +
-						                                                    "\".value is null");
-
-						    itemValue = value * count;
+							    itemValue = value * count;
+						    }
 					    }
 
 					    switch (itemValue)
@@ -934,13 +921,13 @@ public class ItemInfo(
 													 : "") +
 												 i18n["Effectivedurability"] +
 												 ": " +
-												 Math.Round((double)(itemProperties.MaxDurability / armor.Destructibility)!) +
+												 Math.Round((itemProperties.MaxDurability ?? 0)/ armor.Destructibility) +
 												 " (" +
 												 i18n["Max"] +
 												 ": " +
-												 Math.Round((double)itemProperties.MaxDurability!) +
+												 Math.Round(itemProperties.MaxDurability ?? 0) +
 												 " x " +
-												 localeService.GetLocaleDb(UserLocale)["Mat" + armorMaterial] +
+												 Localization["Mat" + armorMaterial] +
 												 ": " +
 												 Math.Round(1 / armor.Destructibility, 1) +
 												 ") | " +
@@ -956,7 +943,7 @@ public class ItemInfo(
 								" (" + 
 								itemProperties.ArmorClass + 
 								"/" + 
-								Math.Round((double)itemProperties.MaxDurability / armor.Destructibility) + 
+								Math.Round(itemProperties.MaxDurability ?? 0 / armor.Destructibility) + 
 								")", 
 									"append");
 				    
@@ -965,7 +952,7 @@ public class ItemInfo(
 						    " (" + 
 								itemProperties.ArmorClass + 
 								"/" + 
-								Math.Round((double)itemProperties.MaxDurability / armor.Destructibility) +
+								Math.Round(itemProperties.MaxDurability ?? 0/ armor.Destructibility) +
 								")", 
 										"append");
 			    }
@@ -1000,7 +987,7 @@ public class ItemInfo(
 												 "\nAmmo Tooltip Class: " +
 												 ammoProps.AmmoTooltipClass +
 												 "\nFragmentation Chance: " +
-												 (Math.Round((double)ammoProps.FragmentationChance! * 100) + "%" +
+												 (Math.Round((ammoProps.FragmentationChance ?? 0) * 100) + "%" +
 												  (ammoProps.MaxFragmentsCount > 1
 													  ? "\nMin Fragments Count: " +
 														ammoProps.MinFragmentsCount +
@@ -1008,16 +995,16 @@ public class ItemInfo(
 														ammoProps.MaxFragmentsCount
 													  : "")) +
 												  "\nRicochet Chance: " +
-												  Math.Round((double)ammoProps.RicochetChance! * 100) +
+												  Math.Round((ammoProps.RicochetChance ?? 0) * 100) +
 												  "%" +
 												  "\nMisfire Chance: " +
-												  Math.Round((double)ammoProps.MisfireChance! * 100) +
+												  Math.Round((ammoProps.MisfireChance ?? 0) * 100) +
 												  "%" +
 												  "\nMalf Feed Chance: " +
-												  Math.Round((double)ammoProps.MalfFeedChance! * 100) +
+												  Math.Round((ammoProps.MalfFeedChance ?? 0) * 100) +
 												  "%" +
 												  "\nMalf Misfire Chance: " +
-												  Math.Round((double)ammoProps.MalfMisfireChance! * 100) +
+												  Math.Round((ammoProps.MalfMisfireChance ?? 0) * 100) +
 												  "%" +
 												  "\nDurability Burn Modificator: " +
 												  ammoProps.DurabilityBurnModificator +
@@ -1029,7 +1016,7 @@ public class ItemInfo(
 												  ammoProps.LightBleedingDelta +
 												  "\nStamina Burn Per Damage: " +
 												  ammoProps.StaminaBurnPerDamage +
-												  ((bool)ammoProps.Tracer!
+												  (ammoProps.Tracer ?? false
 													  ? "\nTracer: Yes" +
 														"\nTracer Color: " +
 														ammoProps.TracerColor +
@@ -1085,12 +1072,12 @@ public class ItemInfo(
 
 					    foreach (Grid grid in grids)
 					    {
-						    totalSlots += grid.Properties?.CellsH * grid.Properties?.CellsV ??
-						                  throw new NullReferenceException("totalSlots is null");
+						    totalSlots += grid.Properties?.CellsH * grid.Properties?.CellsV ?? 0;
 					    }
 
 					    double slotEfficiency =
-						    Math.Round((double)(totalSlots / (itemProperties.Width * itemProperties.Height))!, 2);
+						    Math.Round((double)totalSlots / (itemProperties.Width ?? 1) * (itemProperties.Height ?? 1)
+							    , 2);
 
 					    slotEfficiencyString.Append(i18n["Slotefficiency"] +
 													": x" +
@@ -1117,8 +1104,7 @@ public class ItemInfo(
 
 			    if (isBanned)
 			    {
-				    fleaValue = Utils.GetFleaPrice(itemId) / slotDensity ?? 
-				                throw new NullReferenceException("fleaValue is null");
+				    fleaValue = Utils.GetFleaPrice(itemId) / slotDensity ?? 0;
 
 				    if (Config.ModMarkValuableItems.AlwaysMarkBannedItems)
 					    fleaValue = Config.ModMarkValuableItems.FleaSlotValueThresholdBest + 1;
@@ -1171,7 +1157,7 @@ public class ItemInfo(
 									(Config.ModPriceInfo.AddItemValue
 										? i18n["ItemValue"] +
 										  ": " +
-										  Utils.FormatPrice((double)itemInHandbook.Price!) +
+										  Utils.FormatPrice(itemInHandbook.Price ?? 0) +
 										  " | "
 										: "") +
 									i18n["Valuation1"] +
@@ -1190,20 +1176,20 @@ public class ItemInfo(
 
 				    headsetDescription.Append(i18n["AmbientVolume"] +
 											 ": " +
-											 Math.Round((double)(itemProperties.AmbientCompressorSendLevel + 10 +
-																 itemProperties.EffectsReturnsGrEnvCommonCompressorSendLeveloupVolume + 7 +
-																 itemProperties.EnvNatureCompressorSendLevel + 5 +
-																 itemProperties.EnvTechnicalCompressorSendLevel + 7)! * 10) / 10 +
+											 Math.Round(((itemProperties.AmbientCompressorSendLevel ?? -10) + 10 +
+											             (itemProperties.EffectsReturnsGrEnvCommonCompressorSendLeveloupVolume ?? -7) + 7 +
+											             (itemProperties.EnvNatureCompressorSendLevel ?? -5) + 5 +
+											             (itemProperties.EnvTechnicalCompressorSendLevel ?? -7) + 7) * 10) / 10 +
 											 "db | " +
 											 i18n["Boost"] +
 											 ": +" +
-											 gain + Math.Abs((double)(thresh + 20)!) +
+											 gain + Math.Abs((thresh ?? -20) + 20) +
 											 "db" +
 											 (itemProperties.Distortion > 0
 												 ? " | " +
 												   i18n["Distortion"] +
 												   ": " +
-												   Math.Round((double)(itemProperties.Distortion * 100)) +
+												   Math.Round((itemProperties.Distortion ?? 0) * 100) +
 												   "%"
 												 : "") +
 											 "\n\n");
