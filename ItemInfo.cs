@@ -775,10 +775,11 @@ public class ItemInfo(
 				    damageMult = itemProperties.BuckshotBullets ?? 0;
 			    
 			    Utils.AddToName(itemId,
-				    " " +
+				    " (" +
 				    itemProperties.Damage * damageMult +
 				    "/" +
-				    itemProperties.PenetrationPower,
+				    itemProperties.PenetrationPower +
+				    ")",
 				    "append");
 		    }
 		    
