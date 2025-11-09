@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using System.Text;
 using ItemInfo.Models;
+using Microsoft.AspNetCore.Mvc.Formatters.Xml;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
 using SPTarkov.Server.Core.Models.Eft.Hideout;
@@ -195,14 +196,13 @@ public static class Utils
 		    _templates.Prices[itemId] : GetItemBestTrader(itemId).price;
     }*/
     
-    public static void AddLocaleTransformer(
-	    Dictionary<string, LazyLoad<Dictionary<string, string>>> lazyloadList,
-	    string lang,
-	    string type,
-	    string place,
-	    string itemId,
-	    string addToName,
-	    string originalName)
+    public static void AddLocaleTransformer(Dictionary<string, LazyLoad<Dictionary<string, string>>> lazyloadList,
+											string lang,
+											string type,
+											string place,
+											string itemId,
+											string addToName,
+											string originalName)
     {
 	    lazyloadList[lang].AddTransformer(localeData =>
 	    {
@@ -217,11 +217,13 @@ public static class Utils
 			    case "append":
 				    localeData[itemId + " " + type] = originalName + addToName;
 				    break;
-			    case "replace":
-				    localeData[itemId + " " + type] = addToName;
+			    case "wrap":
+				    localeData[itemId + " " + type] = addToName[..^12] + 
+				                                      localeData[itemId + " " + type] + 
+				                                      addToName[^12..];
 				    break;
 			    default:
-				    localeData[itemId + " " + type] = _locales[lang][itemId + " Name"];
+				    localeData[itemId + " " + type] = _locales[lang][itemId + " " + type];
 				    break;
 		    }
 		    
@@ -229,8 +231,7 @@ public static class Utils
 	    });
     }
     
-    public static void AddToName(string itemId, string addToName, string place,
-	    string lang = "")
+    public static void AddToName(string itemId, string addToName, string place, string lang = "")
     {
 	    if (lang == "")
 	    {
@@ -254,8 +255,7 @@ public static class Utils
 	    }
     }
     
-    public static void AddToShortName(string itemId, string addToShortName, string place,
-	    string lang = "")
+    public static void AddToShortName(string itemId, string addToShortName, string place, string lang = "")
     {
 	    if (lang == "")
 	    {
@@ -267,20 +267,19 @@ public static class Utils
 	    }
 	    else
 	    {
-		    var originalName = GetItemShortName(itemId, lang);
+		    var originalShortName = GetItemShortName(itemId, lang);
 
 		    AddLocaleTransformer(_lazyloadList,
-			    lang,
-			    "ShortName",
-			    place,
-			    itemId,
-			    addToShortName,
-			    originalName);
+								lang,
+								"ShortName",
+								place,
+								itemId,
+								addToShortName,
+								originalShortName);
 	    }
     }
     
-    public static void AddToDescription(string itemId, string addToDescription, string place,
-	    string lang = "")
+    public static void AddToDescription(string itemId, string addToDescription, string place, string lang = "")
     {
 	    if (lang == "")
 	    {
@@ -295,12 +294,12 @@ public static class Utils
 		    var originalDescription = GetItemDescription(itemId, lang);
 
 		    AddLocaleTransformer(_lazyloadList,
-			    lang,
-			    "Description",
-			    place,
-			    itemId,
-			    addToDescription,
-			    originalDescription);
+								lang,
+								"Description",
+								place,
+								itemId,
+								addToDescription,
+								originalDescription);
 	    }
     }
 
@@ -319,9 +318,9 @@ public static class Utils
 		    AddLocaleTransformer(_lazyloadList,
 			    lang,
 			    "Name",
-			    "replace",
+			    "wrap",
 			    itemId,
-			    "<b><color=" + tiersHexCode + ">" + GetItemName(itemId) + "</color></b>",
+			    "<b><color=" + tiersHexCode + "></color></b>",
 			    "");
 	    }
     }
@@ -334,20 +333,25 @@ public static class Utils
 
 	    foreach (Trader trader in _traders.Values)
 	    {
-		    bool canBuy = trader.Base.ItemsBuy is not null && 
-		                  trader.Base.ItemsBuyProhibited is not null && 
-		                  (trader.Base.ItemsBuy.Category.Any(x => itemBaseClasses.Contains(x)) ||
-							trader.Base.ItemsBuy.IdList.Contains(itemId) ||
-							!trader.Base.ItemsBuyProhibited.IdList.Contains(itemId));
+		    if (trader.Base.ItemsBuy is null || 
+		        trader.Base.ItemsBuyProhibited is null)
+			    continue;
 
-		    if (!canBuy) 
+		    bool canBuyByCategory = trader.Base.ItemsBuy.Category.Any(x => itemBaseClasses.Contains(x));
+		    bool canBuyById = trader.Base.ItemsBuy.IdList.Contains(itemId);
+		    bool isProhibited = trader.Base.ItemsBuyProhibited.IdList.Contains(itemId);
+
+		    if ((!canBuyByCategory && !canBuyById) ||
+		        isProhibited) 
 			    continue;
 		    
-		    traderMulti = (100f - trader.Base.LoyaltyLevels?[0].BuyPriceCoefficient) / 100f; // AVG fallback
+		    traderMulti = (100f - trader.Base.LoyaltyLevels?[0].BuyPriceCoefficient) / 100f;
 		    traderName = _locales[lang].GetValueOrDefault(trader.Base.Id + " Nickname", trader.Base.Id);
+		    
+		    return (traderMulti, traderName);
 	    }
-	    
-	    return new ValueTuple<double?, string>(traderMulti, traderName);
+
+	    return (traderMulti, traderName);
     }
     
     public static List<ResolvedBarter> BarterResolver(string itemId)
@@ -448,7 +452,6 @@ public static class Utils
 	    List<ResolvedBarter> itemBarters, string locale = "en")
     {
 	    StringBuilder barterString = new StringBuilder();
-	    StringBuilder temp =  new StringBuilder();
 	    List<int> rarityArray = [];
 	    List<double> prices = [];
 
@@ -485,23 +488,32 @@ public static class Utils
 			    {
 				    case "5449016a4bdc2d6f028b456f":
 					    double roubles = resource.Count ?? 0; // Null guard
-					    barterString.Append(FormatPrice(Math.Round(roubles)) + "₽ + ");
+					    barterString.Append(FormatPrice(Math.Round(roubles)) + 
+					                        "₽ + ");
 					    break;
 				    
 				    case "569668774bdc2da2298b4568":
 					    double euros = resource.Count ?? 0; // Null guard
-					    barterString.Append(FormatPrice(Math.Round(euros)) + "€ ≈ " + FormatPrice(Math.Round(_euroRatio * euros)) + "₽ + ");
+					    barterString.Append(FormatPrice(Math.Round(euros)) + 
+					                        "€ ≈ " + 
+					                        FormatPrice(Math.Round(_euroRatio * euros)) + 
+					                        "₽ + ");
 					    break;
 				    
 				    case "5696686a4bdc2da3298b456a":
 					    double dollars = resource.Count ?? 0; // Null guard
-					    barterString.Append(FormatPrice(Math.Round(dollars)) + "$ ≈ " + FormatPrice(Math.Round(_dollarRatio * dollars)) + "₽ + ");
+					    barterString.Append(FormatPrice(Math.Round(dollars)) + 
+					                        "$ ≈ " + 
+					                        FormatPrice(Math.Round(_dollarRatio * dollars)) + 
+					                        "₽ + ");
 					    break;
 				    
 				    default:
 					    totalBarterPrice += GetFleaPrice(resource.Template) * resource.Count ?? -999999; // Null guard
 					    barterString.Append(GetItemShortName(resource.Template, locale) + 
-					                        " x" + resource.Count + " + ");
+					                        " x" + 
+					                        resource.Count + 
+					                        " + ");
 					    isBarter = true;
 					    break;
 			    }
@@ -529,6 +541,7 @@ public static class Utils
     public static string BarterResourceInfoGenerator(string itemId, string locale = "en")
 	{
 		StringBuilder baseBarterString = new StringBuilder();
+		StringBuilder extendedBarterString = new StringBuilder();
 	
 		foreach (KeyValuePair<MongoId, Trader> traderPair in _traders)
 		{
@@ -581,7 +594,9 @@ public static class Utils
 											GetItemName(itemId, locale));
 	
 					double totalBarterPrice = 0;
-					string extendedBarterString = " < … + ";
+
+					extendedBarterString.Clear();
+					extendedBarterString.Append(" < … + ");
 	
 					foreach (BarterScheme barterResource in barterList)
 					{
@@ -596,12 +611,14 @@ public static class Utils
 						if (barterResource.Template == itemId)
 							continue;
 	
-						extendedBarterString += GetItemShortName(barterResource.Template, locale);
-						extendedBarterString += " x" + barterResource.Count + " + ";
+						extendedBarterString.Append(GetItemShortName(barterResource.Template, locale) + 
+													" x" + 
+													barterResource.Count + 
+													" + ");
 					}
 	
-					if (extendedBarterString.EndsWith(" + "))
-						extendedBarterString = extendedBarterString.Substring(0, extendedBarterString.Length - 3);
+					if (extendedBarterString.ToString().EndsWith(" + "))
+						extendedBarterString.Remove(extendedBarterString.Length - 3, 3);
 	
 					if (totalBarterPrice > 0)
 					{
@@ -612,7 +629,9 @@ public static class Utils
 	
 						double diff = Math.Round(barterItemPrice.Value - totalBarterPrice);
 						
-						extendedBarterString += " | Δ ≈ " + FormatPrice(diff) + "₽";
+						extendedBarterString.Append(" | Δ ≈ " + 
+						                            FormatPrice(diff) + 
+						                            "₽");
 					}
 	
 					baseBarterString.Append(extendedBarterString + "\n");
@@ -680,9 +699,7 @@ public static class Utils
 			foreach (Reward reward in questRewards)
 			{
 				if (reward.Type == RewardType.AssortmentUnlock)
-				{
 					filteredRewards.Add(reward);
-				}
 			}
 
 			questRewards = filteredRewards;
@@ -754,6 +771,11 @@ public static class Utils
 	public static string ProductionGenerator(string itemId, string locale = "en")
 	{
 		StringBuilder craftableString = new StringBuilder();
+		StringBuilder componentString = new StringBuilder();
+		StringBuilder recipeAreaString = new StringBuilder();
+		StringBuilder recipeDivision = new StringBuilder();
+		StringBuilder questReq = new StringBuilder();
+		
 		List<HideoutProduction>? recipes = _hideoutProductionData.Recipes;
 
 		if (recipes is null)
@@ -772,13 +794,15 @@ public static class Utils
 			    (bool)recipe.Locked &&
 			    requirements.All(x => x.QuestId is not null))
 				continue;
-				
-			string componentString = "";
-			string recipeAreaString = GetCraftingAreaName((int)recipe.AreaType!, locale);
+			
 			double totalRecipePrice = 0;
-			string recipeDivision = "";
-			string questReq = "";
-
+			
+			componentString.Clear();
+			recipeDivision.Clear();
+			questReq.Clear();
+			recipeAreaString.Clear();
+			recipeAreaString.Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
+			
 			foreach (Requirement requirement in requirements)
 			{
 				MongoId? craftComponentId = requirement.TemplateId;
@@ -792,46 +816,54 @@ public static class Utils
 				switch (requirement.Type)
 				{
 					case "Area":
-						recipeAreaString = GetCraftingAreaName((int)requirement.AreaType!, locale);
+						recipeAreaString.Clear();
+						recipeAreaString.Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
 						break;
 					
 					case "Item":
 						int? craftComponentCount = requirement.Count;
 
-						componentString += GetItemShortName(craftComponentId, locale) +
-						                   " x" +
-						                   craftComponentCount +
-						                   " + ";
+						componentString.Append(GetItemShortName(craftComponentId, locale) +
+											   " x" +
+											   craftComponentCount +
+											   " + ");
 						totalRecipePrice += (double)(craftComponentPrice * craftComponentCount)!;
 						break;
 					
 					case "Resource":
 						double? resourceProportion = requirement.Resource /
 						                             _items[(MongoId)requirement.TemplateId!].Properties?.Resource;
-						componentString += GetItemShortName(craftComponentId, locale) +
-						                   " x" +
-						                   Math.Round((double)resourceProportion! * 100) +
-						                   "% + ";
+						componentString.Append(GetItemShortName(craftComponentId, locale) +
+											   " x" +
+											   Math.Round((double)resourceProportion! * 100) +
+											   "% + ");
 						break;
 					
 					case "QuestComplete":
 						if (requirement.QuestId is null)
 							break;
-						
+
 						if (_locales[locale].ContainsKey(requirement.QuestId))
-							questReq = " " +
-							           _locales[locale][requirement.QuestId + " name"] +
-							           "✔)";
+						{
+							questReq.Clear();
+							questReq.Append(" " +
+										   _locales[locale][requirement.QuestId + " name"] +
+										   "✔)");
+						}
+
 						break;
 				}
 			}
 
 			if (recipe.Count > 1)
-				recipeDivision = " " +
-				                 _translation.Language[locale]["peritem"];
-			
+			{
+				recipeDivision.Clear();
+				recipeDivision.Append(" " +
+				                      _translation.Language[locale]["peritem"]);
+			}
+
 			if (componentString.Length > 3)
-				componentString = componentString.Substring(0, componentString.Length - 3);
+				componentString.Remove(componentString.Length - 3, 3);
 
 			if (recipe.EndProduct == "59faff1d86f7746c51718c9c")
 			{

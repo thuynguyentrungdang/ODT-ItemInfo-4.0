@@ -503,16 +503,14 @@ public class ItemInfo(
 
     private void ItemInfoMain()
     {
+	    TranslationDebug();
+	    QuestRewards();
+	    
 	    Stopwatch stopwatch = Stopwatch.StartNew();
 	    
 	    logger.Info("[ItemInfo] Processing items...");
-	    
-	    TranslationDebug();
-	    QuestRewards();
 	    ItemHandling();
-	    
 	    stopwatch.Stop();
-	    
 	    logger.Info("[ItemInfo] Completed in " + stopwatch.ElapsedMilliseconds + " ms.");
     }
 
@@ -638,6 +636,11 @@ public class ItemInfo(
 	    StringBuilder slotEfficiencyString = new StringBuilder();
 	    StringBuilder headsetDescription = new StringBuilder();
 	    StringBuilder advancedAmmoInfoString = new StringBuilder();
+	    StringBuilder itemBestTraderName = new StringBuilder();
+	    StringBuilder barterResourceInfo = new StringBuilder();
+	    StringBuilder itemName = new StringBuilder();
+	    StringBuilder logString = new StringBuilder();
+	    StringBuilder tiersHexcode = new StringBuilder();
 	    
 	    foreach (KeyValuePair<MongoId, TemplateItem> kvp in Items)
 	    {
@@ -654,9 +657,22 @@ public class ItemInfo(
 		    slotEfficiencyString.Clear();
 		    headsetDescription.Clear();
 		    advancedAmmoInfoString.Clear();
+		    itemBestTraderName.Clear();
+		    barterResourceInfo.Clear();
+		    tiersHexcode.Clear();
+		    itemName.Clear();
+		    logString.Clear();
 		    
-		    logger.Info("Processing item " + (a + 1) + "/" + Items.Count + ": " + Utils.GetItemName(kvp.Key));
-		    a += 1;
+		    itemName.Append(Utils.GetItemName(kvp.Key));
+		    logString.Append("Processing item " +
+		                     (a + 1) +
+		                     "/" +
+		                     Items.Count +
+		                     ": " +
+		                     itemName);
+		    
+		    //logger.Info(logString.ToString());
+		    //a += 1;
 		    
 		    MongoId itemId = kvp.Key;
 		    TemplateItem templateItem = kvp.Value;
@@ -674,29 +690,27 @@ public class ItemInfo(
 			    templateItem.Parent == "543be5dd4bdc2deb348b4569") // Ignore currencies.
 				continue; 
 			
-			string name = Utils.GetItemName(itemId, UserLocale);
-			
 		    // Boilerplate defaults
 		    double fleaPrice = Utils.GetFleaPrice(itemId) ?? 0;
-		    string fleaPriceString = fleaPrice.ToString(CultureInfo.CurrentCulture);
-		    
 		    ValueTuple<double?, string, string> itemBestVendor = Utils.GetItemBestTrader(itemId);
-
 		    double? price = itemBestVendor.Item1;
 		    
 		    if (price is null)
 			    continue;
 		    
 		    double traderPrice = Math.Round((double)price);
-		    string itemBestTraderName = itemBestVendor.Item2;
-		    int slotDensity = Utils.GetItemSlotDensity(itemProperties);
 		    List<Utils.ResolvedBarter> itemBarters = Utils.BarterResolver(itemId);
 		    ValueTuple<List<double>, string, List<int>> barterInfo = Utils.BarterInfoGenerator(itemBarters, UserLocale);
-		    string barterResourceInfo = Utils.BarterResourceInfoGenerator(itemId, UserLocale);
 		    List<int> rarityArray = barterInfo.Item3;
-		    string itemQuestInfo = Utils.QuestInfoGenerator(itemId, UserLocale);
 		    int itemRarity = rarityArray.Min();
+		    int slotDensity = Utils.GetItemSlotDensity(itemProperties);
 		    bool isBanned;
+		    
+		    string fleaPriceString = fleaPrice.ToString(CultureInfo.CurrentCulture);
+		    string itemQuestInfo = Utils.QuestInfoGenerator(itemId, UserLocale);
+
+		    itemBestTraderName.Append(itemBestVendor.Item2);
+		    barterResourceInfo.Append(Utils.BarterResourceInfoGenerator(itemId, UserLocale));
 
 		    // UseBsgStaticFleaBanList
 		    if (Config.UseBsgStaticFleaBanList.Enabled)
@@ -750,7 +764,7 @@ public class ItemInfo(
 						    : Utils.BarterInfoGenerator(Utils.BarterResolver(ammo ?? "")).rarityArray.Min();
 			    }
 		    }
-
+		    
 		    // BulletStatsInName
 		    if (Config.ModBulletStatsInName.Enabled &&
 		        itemProperties.AmmoType is "bullet" or "buckshot")
@@ -767,143 +781,7 @@ public class ItemInfo(
 				    itemProperties.PenetrationPower,
 				    "append");
 		    }
-
-		    // Rarity recolor handling
-		    if (Config.ModRarityRecolor.Enabled &&
-		        !Config.RarityRecolorBlacklist.Contains(templateItem.Parent))
-		    {
-			    if ((!Config.ModRarityRecolor.BypassAmmoRecolor ||
-			         templateItem.Parent != BaseClasses.AMMO) &&
-			        (!Config.ModRarityRecolor.BypassKeysRecolor ||
-			         (templateItem.Parent != BaseClasses.KEY_MECHANICAL &&
-			          templateItem.Parent != BaseClasses.KEYCARD)))
-			    {
-				    foreach (KeyValuePair<string, int> customItem in Config.ModRarityRecolor.CustomRarity)
-				    {
-					    if (customItem.Key == itemId)
-						    itemRarity = customItem.Value;
-				    }
-
-				    string tiersHexcode;
-				    string tier;
-				    
-				    switch (itemRarity)
-				    {
-					    case 7:
-						    tier = i18n["OVERPOWERED"];
-						    itemProperties.BackgroundColor = TiersHex["OVERPOWERED"];
-						    tiersHexcode = TiersHex["OVERPOWERED"];
-						    break;
-					    case 1:
-						    tier = i18n["COMMON"];
-						    itemProperties.BackgroundColor = TiersHex["COMMON"];
-						    tiersHexcode = TiersHex["COMMON"];
-						    break;
-					    case 2:
-						    tier = i18n["RARE"];
-						    itemProperties.BackgroundColor = TiersHex["RARE"];
-						    tiersHexcode = TiersHex["RARE"];
-						    break;
-					    case 3:
-						    tier = i18n["EPIC"];
-						    itemProperties.BackgroundColor = TiersHex["EPIC"];
-						    tiersHexcode = TiersHex["EPIC"];
-						    break;
-					    case 4:
-						    tier = i18n["LEGENDARY"];
-						    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
-						    tiersHexcode = TiersHex["LEGENDARY"];
-						    break;
-					    case 5:
-						    tier = i18n["UBER"];
-						    itemProperties.BackgroundColor = TiersHex["UBER"];
-						    tiersHexcode = TiersHex["UBER"];
-						    break;
-					    case 6:
-						    tier = i18n["UNOBTAINIUM"];
-						    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
-						    tiersHexcode = TiersHex["UNOBTAINIUM"];
-						    break;
-					    case 8:
-						    tier = i18n["CUSTOM"];
-						    itemProperties.BackgroundColor = TiersHex["CUSTOM"];
-						    tiersHexcode = TiersHex["CUSTOM"];
-						    break;
-					    default: // itemRarity >= 9
-						    tier = i18n["CUSTOM2"];
-						    itemProperties.BackgroundColor = TiersHex["CUSTOM2"];
-						    tiersHexcode = TiersHex["CUSTOM2"];
-						    break;
-				    }
-
-				    // Rarity recolor fallback handling
-				    if (Config.ModRarityRecolor.FallbackValueBasedRecolor &&
-				        itemRarity == 0)
-				    {
-					    double itemValue = itemInHandbook.Price ?? 0;
-					    int itemSlots = itemProperties.Width * itemProperties.Height ?? 0;
-
-					    if (itemSlots > 1)
-						    itemValue = Math.Round(itemValue / itemSlots);
-
-					    if (templateItem.Parent == "543be5cb4bdc2deb348b4568")
-					    {
-						    IEnumerable<StackSlot>? stackSlots = itemProperties.StackSlots;
-						    List<StackSlot>? stackSlotsList = stackSlots?.ToList();
-
-						    if (stackSlotsList is not null)
-						    {
-							    double count = stackSlotsList[0].MaxCount ?? 0;
-							    double value = Utils.GetItemBestTrader(itemId).price ?? 0;
-
-							    itemValue = value * count;
-						    }
-					    }
-
-					    switch (itemValue)
-					    {
-						    case var _ when itemValue < int.Parse(Tiers["COMMON_VALUE_FALLBACK"]):
-							    tier = i18n["COMMON"];
-							    itemProperties.BackgroundColor = TiersHex["COMMON"];
-							    tiersHexcode = TiersHex["COMMON"];
-							    break;
-						    case var _ when itemValue < int.Parse(Tiers["RARE_VALUE_FALLBACK"]):
-							    tier = i18n["RARE"];
-							    itemProperties.BackgroundColor = TiersHex["RARE"];
-							    tiersHexcode = TiersHex["RARE"];
-							    break;
-						    case var _ when itemValue < int.Parse(Tiers["EPIC_VALUE_FALLBACK"]):
-							    tier = i18n["EPIC"];
-							    itemProperties.BackgroundColor = TiersHex["EPIC"];
-							    tiersHexcode = TiersHex["EPIC"];
-							    break;
-						    case var _ when itemValue < int.Parse(Tiers["LEGENDARY_VALUE_FALLBACK"]):
-							    tier = i18n["LEGENDARY"];
-							    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
-							    tiersHexcode = TiersHex["LEGENDARY"];
-							    break;
-						    case var _ when itemValue < int.Parse(Tiers["UBER_VALUE_FALLBACK"]):
-							    tier = i18n["UBER"];
-							    itemProperties.BackgroundColor = TiersHex["UBER"];
-							    tiersHexcode = TiersHex["UBER"];
-							    break;
-						    default:
-							    tier = i18n["UNOBTAINIUM"];
-							    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
-							    tiersHexcode = TiersHex["UNOBTAINIUM"];
-							    break;
-					    }
-				    }
-
-				    Utils.AddColorToName(itemId, tiersHexcode);
-
-				    if (Config.ModRarityRecolor.AddTierNameToPricesInfo &&
-				        !string.IsNullOrEmpty(tier))
-					    priceString.Append(tier +
-					                       " | ");
-			    }
-		    }
-
+		    
 		    if (Config.ModArmorInfo.Enabled)
 		    {
 			    if (itemProperties.ArmorClass > 0 &&
@@ -957,7 +835,7 @@ public class ItemInfo(
 										"append");
 			    }
 		    }
-
+		    
 		    if (Config.ModAdvancedAmmoInfo.Enabled)
 		    {
 			    if (templateItem.Parent == "5485a8684bdc2da71d8b4567")
@@ -1271,16 +1149,155 @@ public class ItemInfo(
 									usedForCraftingString +
 									usedForBarterString +
 									advancedAmmoInfoString);
+		    
+		    // Rarity recolor handling
+		    if (Config.ModRarityRecolor.Enabled &&
+		        !Config.RarityRecolorBlacklist.Contains(templateItem.Parent))
+		    {
+			    if ((!Config.ModRarityRecolor.BypassAmmoRecolor ||
+			         templateItem.Parent != BaseClasses.AMMO) &&
+			        (!Config.ModRarityRecolor.BypassKeysRecolor ||
+			         (templateItem.Parent != BaseClasses.KEY_MECHANICAL &&
+			          templateItem.Parent != BaseClasses.KEYCARD)))
+			    {
+				    foreach (KeyValuePair<string, int> customItem in Config.ModRarityRecolor.CustomRarity)
+				    {
+					    if (customItem.Key == itemId)
+						    itemRarity = customItem.Value;
+				    }
+				    
+				    string tier;
+				    
+				    
+				    switch (itemRarity)
+				    {
+					    case 7:
+						    tier = i18n["OVERPOWERED"];
+						    itemProperties.BackgroundColor = TiersHex["OVERPOWERED"];
+						    tiersHexcode.Append(TiersHex["OVERPOWERED"]);
+						    break;
+					    case 1:
+						    tier = i18n["COMMON"];
+						    itemProperties.BackgroundColor = TiersHex["COMMON"];
+						    tiersHexcode.Append(TiersHex["COMMON"]);
+						    break;
+					    case 2:
+						    tier = i18n["RARE"];
+						    itemProperties.BackgroundColor = TiersHex["RARE"];
+						    tiersHexcode.Append(TiersHex["RARE"]);
+						    break;
+					    case 3:
+						    tier = i18n["EPIC"];
+						    itemProperties.BackgroundColor = TiersHex["EPIC"];
+						    tiersHexcode.Append(TiersHex["EPIC"]);
+						    break;
+					    case 4:
+						    tier = i18n["LEGENDARY"];
+						    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
+						    tiersHexcode.Append(TiersHex["LEGENDARY"]);
+						    break;
+					    case 5:
+						    tier = i18n["UBER"];
+						    itemProperties.BackgroundColor = TiersHex["UBER"];
+						    tiersHexcode.Append(TiersHex["UBER"]);
+						    break;
+					    case 6:
+						    tier = i18n["UNOBTAINIUM"];
+						    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
+						    tiersHexcode.Append(TiersHex["UNOBTAINIUM"]);
+						    break;
+					    case 8:
+						    tier = i18n["CUSTOM"];
+						    itemProperties.BackgroundColor = TiersHex["CUSTOM"];
+						    tiersHexcode.Append(TiersHex["CUSTOM"]);
+						    break;
+					    default: // itemRarity >= 9
+						    tier = i18n["CUSTOM2"];
+						    itemProperties.BackgroundColor = TiersHex["CUSTOM2"];
+						    tiersHexcode.Append(TiersHex["CUSTOM2"]);
+						    break;
+				    }
+
+				    // Rarity recolor fallback handling
+				    if (Config.ModRarityRecolor.FallbackValueBasedRecolor &&
+				        itemRarity == 0)
+				    {
+					    double itemValue = itemInHandbook.Price ?? 0;
+					    int itemSlots = itemProperties.Width * itemProperties.Height ?? 0;
+
+					    if (itemSlots > 1)
+						    itemValue = Math.Round(itemValue / itemSlots);
+
+					    if (templateItem.Parent == "543be5cb4bdc2deb348b4568")
+					    {
+						    IEnumerable<StackSlot>? stackSlots = itemProperties.StackSlots;
+						    List<StackSlot>? stackSlotsList = stackSlots?.ToList();
+
+						    if (stackSlotsList is not null)
+						    {
+							    double count = stackSlotsList[0].MaxCount ?? 0;
+							    double value = Utils.GetItemBestTrader(itemId).price ?? 0;
+
+							    itemValue = value * count;
+						    }
+					    }
+
+					    switch (itemValue)
+					    {
+						    case var _ when itemValue < int.Parse(Tiers["COMMON_VALUE_FALLBACK"]):
+							    tier = i18n["COMMON"];
+							    itemProperties.BackgroundColor = TiersHex["COMMON"];
+							    tiersHexcode.Append(TiersHex["COMMON"]);
+							    break;
+						    case var _ when itemValue < int.Parse(Tiers["RARE_VALUE_FALLBACK"]):
+							    tier = i18n["RARE"];
+							    itemProperties.BackgroundColor = TiersHex["RARE"];
+							    tiersHexcode.Append(TiersHex["RARE"]);
+							    break;
+						    case var _ when itemValue < int.Parse(Tiers["EPIC_VALUE_FALLBACK"]):
+							    tier = i18n["EPIC"];
+							    itemProperties.BackgroundColor = TiersHex["EPIC"];
+							    tiersHexcode.Append(TiersHex["EPIC"]);
+							    break;
+						    case var _ when itemValue < int.Parse(Tiers["LEGENDARY_VALUE_FALLBACK"]):
+							    tier = i18n["LEGENDARY"];
+							    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
+							    tiersHexcode.Append(TiersHex["LEGENDARY"]);
+							    break;
+						    case var _ when itemValue < int.Parse(Tiers["UBER_VALUE_FALLBACK"]):
+							    tier = i18n["UBER"];
+							    itemProperties.BackgroundColor = TiersHex["UBER"];
+							    tiersHexcode.Append(TiersHex["UBER"]);
+							    break;
+						    default:
+							    tier = i18n["UNOBTAINIUM"];
+							    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
+							    tiersHexcode.Append(TiersHex["UNOBTAINIUM"]);
+							    break;
+					    }
+				    }
+				    
+				    Utils.AddColorToName(itemId, tiersHexcode.ToString());
+
+				    if (Config.ModRarityRecolor.AddTierNameToPricesInfo &&
+				        !string.IsNullOrEmpty(tier))
+					    priceString.Append(tier +
+					                       " | ");
+			    }
+		    }
 
 		    Utils.AddToDescription(itemId, descriptionString.ToString(), "prepend");
+		    
 
 		    bool debug = false;
-		    
-		    if (debug)
-				logger.Info("Item \"" + 
-							name + 
-							"\" : " + 
-							descriptionString);
+
+		    if (!debug) 
+			    continue;
+			    
+		    logger.Info("Item \"" +
+		                itemName +
+		                "\" : " +
+		                descriptionString);
 	    }
     }
 }
