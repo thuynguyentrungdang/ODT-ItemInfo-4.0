@@ -511,7 +511,7 @@ public class ItemInfo(
 	    logger.Info("[ItemInfo] Processing items...");
 	    ItemHandling();
 	    stopwatch.Stop();
-	    logger.Info("[ItemInfo] Completed in " + stopwatch.ElapsedMilliseconds + " ms.");
+	    logger.Info("[ItemInfo] Completed processing " + Items.Count +" items in " + stopwatch.ElapsedMilliseconds + " ms.");
     }
 
     private void TranslationDebug()
@@ -1043,7 +1043,7 @@ public class ItemInfo(
 									i18n["Valuation2"] +
 									": " +
 									Utils.FormatPrice(traderPrice) +
-									"₽\n\n");
+									"₽");
 
 		    if (Config.ModHeadsetInfo.Enabled)
 		    {
@@ -1138,18 +1138,6 @@ public class ItemInfo(
 			    }
 		    }
 		    
-		    descriptionString.Append(priceString.ToString() +
-									headsetDescription +
-									armorDurabilityString +
-									slotEfficiencyString +
-									usedForQuestsString +
-									usedForHideoutString +
-									barterString +
-									productionString +
-									usedForCraftingString +
-									usedForBarterString +
-									advancedAmmoInfoString);
-		    
 		    // Rarity recolor handling
 		    if (Config.ModRarityRecolor.Enabled &&
 		        !Config.RarityRecolorBlacklist.Contains(templateItem.Parent))
@@ -1167,7 +1155,6 @@ public class ItemInfo(
 				    }
 				    
 				    string tier;
-				    
 				    
 				    switch (itemRarity)
 				    {
@@ -1281,10 +1268,25 @@ public class ItemInfo(
 
 				    if (Config.ModRarityRecolor.AddTierNameToPricesInfo &&
 				        !string.IsNullOrEmpty(tier))
-					    priceString.Append(tier +
-					                       " | ");
+				    {
+					    priceString.Append(" | " + 
+					                       tier +
+					                       "\n\n");
+				    }
 			    }
 		    }
+		    
+		    descriptionString.Append(priceString.ToString() +
+		                             headsetDescription +
+		                             armorDurabilityString +
+		                             slotEfficiencyString +
+		                             usedForQuestsString +
+		                             usedForHideoutString +
+		                             barterString +
+		                             productionString +
+		                             usedForCraftingString +
+		                             usedForBarterString +
+		                             advancedAmmoInfoString);
 
 		    Utils.AddToDescription(itemId, descriptionString.ToString(), "prepend");
 		    

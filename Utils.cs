@@ -594,9 +594,8 @@ public static class Utils
 											GetItemName(itemId, locale));
 	
 					double totalBarterPrice = 0;
-
-					extendedBarterString.Clear();
-					extendedBarterString.Append(" < … + ");
+					
+					extendedBarterString.Clear().Append(" < … + ");
 	
 					foreach (BarterScheme barterResource in barterList)
 					{
@@ -742,9 +741,8 @@ public static class Utils
 							targetItem = x;
 							break;
 						}
-
-						partString.Clear();
-						partString.Append(targetItem != null 
+						
+						partString.Clear().Append(targetItem != null 
 										? GetItemName(targetItem.Template, locale)
 										: string.Empty);
 					}
@@ -800,8 +798,7 @@ public static class Utils
 			componentString.Clear();
 			recipeDivision.Clear();
 			questReq.Clear();
-			recipeAreaString.Clear();
-			recipeAreaString.Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
+			recipeAreaString.Clear().Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
 			
 			foreach (Requirement requirement in requirements)
 			{
@@ -816,8 +813,7 @@ public static class Utils
 				switch (requirement.Type)
 				{
 					case "Area":
-						recipeAreaString.Clear();
-						recipeAreaString.Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
+						recipeAreaString.Clear().Append(GetCraftingAreaName((int)recipe.AreaType!, locale));
 						break;
 					
 					case "Item":
@@ -845,10 +841,9 @@ public static class Utils
 
 						if (_locales[locale].ContainsKey(requirement.QuestId))
 						{
-							questReq.Clear();
-							questReq.Append(" " +
-										   _locales[locale][requirement.QuestId + " name"] +
-										   "✔)");
+							questReq.Clear().Append(" " +
+							                        _locales[locale][requirement.QuestId + " name"] +
+							                        "✔)");
 						}
 
 						break;
@@ -857,9 +852,8 @@ public static class Utils
 
 			if (recipe.Count > 1)
 			{
-				recipeDivision.Clear();
-				recipeDivision.Append(" " +
-				                      _translation.Language[locale]["peritem"]);
+				recipeDivision.Clear().Append(" " +
+				                              _translation.Language[locale]["peritem"]);
 			}
 
 			if (componentString.Length > 3)
