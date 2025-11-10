@@ -35,6 +35,7 @@ public static class Utils
 	private static HideoutProductionData _hideoutProductionData = null!;
 	private static List<HideoutArea> _hideoutAreas = null!;
 	private static HideoutSettingsBase _hideoutSettingsBase = null!;
+	private static List<Trader> _tradersList = null!;
 
 	public static void Initialize(DatabaseService databaseService, 
 								LocaleService localeService, 
@@ -72,6 +73,15 @@ public static class Utils
 			_locales[lang] = _localeService.GetLocaleDb(lang);
 			_lazyloadList[lang] = _databaseService.GetLocales().Global[lang];
 		}
+		
+		_tradersList = [_traders["54cb57776803fa99248b456e"],
+						_traders["5ac3b934156ae10c4430e83c"],
+						_traders["5c0647fdd443bc2504c2d371"],
+						_traders["5a7c2eca46aef81a7ca2145d"],
+						_traders["54cb50c76803fa8b248b4571"],
+						_traders["58330581ace78e27b8b10cee"],
+						_traders["5935c25fb3acc3127c3d8cd9"]
+						];
 	}
     public static string GetItemName(string itemId, string locale = "en")
     {
@@ -331,7 +341,7 @@ public static class Utils
 	    string traderName = "None";
 	    HashSet<MongoId> itemBaseClasses = _itemBaseClassService.GetItemBaseClasses(itemId);
 
-	    foreach (Trader trader in _traders.Values)
+	    foreach (Trader trader in _tradersList)
 	    {
 		    if (trader.Base.ItemsBuy is null || 
 		        trader.Base.ItemsBuyProhibited is null)
@@ -365,11 +375,11 @@ public static class Utils
 				Trader trader = kvp.Value;
 				MongoId traderId = kvp.Key;
 
-				if (trader.Assort is null) // TODO: Temporary until next SPT update
+				/*if (trader.Assort is null) // TODO: Temporary until next SPT update
 				{
 					//_logger.Warning("[ItemInfo] trader.Assort is null.");
 					continue;
-				}
+				}*/
 
 				if (trader.Assort.Items.Count == 0)
 				{
