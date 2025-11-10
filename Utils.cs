@@ -667,38 +667,40 @@ public static class Utils
 			if (questName is null ||
 			    questCondition is null)
 				continue;
-			
+
 			foreach (QuestCondition condition in questCondition)
 			{
 				List<string>? targetList = condition.Target?.List;
 				
-				if (condition.Type != "HandoverItem" &&
-				    (targetList is null ||
-				    !targetList.Contains(itemId)))
+				if (targetList is null)
+					continue;
+
+				if (condition.ConditionType != "HandoverItem" ||
+				    !targetList.Contains(itemId))
 					continue;
 				
 				MongoId trader = _quests[questId].TraderId;
 				string traderName = _locales[locale].GetValueOrDefault(trader + " Nickname", trader);
-				
+
 				bool? onlyFoundInRaid = condition.OnlyFoundInRaid;
-				
+
 				if (onlyFoundInRaid is null)
 					continue;
 
 				questString.Append(_translation.Language[locale]["Found"] +
-								   " " +
-								   ((bool)onlyFoundInRaid
-									   ? "(✔) "
-									   : "") +
-								   "x" +
-								   condition.Value +
-								   " > " +
-								   questName +
-								   " @ " +
-								   traderName +
-								   "\n");
+				                   " " +
+				                   ((bool)onlyFoundInRaid
+					                   ? "(✔) "
+					                   : "") +
+				                   "x" +
+				                   condition.Value +
+				                   " > " +
+				                   questName +
+				                   " @ " +
+				                   traderName +
+				                   "\n");
 			}
-			
+
 			List<Reward> questRewards = [];
 
 			// Combine Started + Success lists

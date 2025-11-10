@@ -670,9 +670,11 @@ public class ItemInfo(
 		                     Items.Count +
 		                     ": " +
 		                     itemName);
-		    
-		    //logger.Info(logString.ToString());
-		    //a += 1;
+
+#if DEBUG
+		    logger.Info(logString.ToString());
+		    a += 1;
+#endif
 		    
 		    MongoId itemId = kvp.Key;
 		    TemplateItem templateItem = kvp.Value;
