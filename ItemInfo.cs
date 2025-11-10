@@ -956,9 +956,7 @@ public class ItemInfo(
 						    totalSlots += grid.Properties?.CellsH * grid.Properties?.CellsV ?? 0;
 					    }
 
-					    double slotEfficiency =
-						    Math.Round((double)totalSlots / (itemProperties.Width ?? 1) * (itemProperties.Height ?? 1)
-							    , 2);
+					    double slotEfficiency = Math.Round((double)totalSlots / ((itemProperties.Width ?? 1) * (itemProperties.Height ?? 1)) , 2);
 
 					    slotEfficiencyString.Append(i18n["Slotefficiency"] +
 													": x" +
