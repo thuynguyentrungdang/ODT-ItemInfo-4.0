@@ -662,18 +662,22 @@ public static class Utils
 			{
 				List<string>? targetList = condition.Target?.List;
 				
-				if (condition.Type != "HandoverItem" ||
-				    targetList is null ||
-				    !targetList.Contains(itemId))
+				if (condition.Type != "HandoverItem" &&
+				    (targetList is null ||
+				    !targetList.Contains(itemId)))
 					continue;
 				
 				MongoId trader = _quests[questId].TraderId;
 				string traderName = _locales[locale].GetValueOrDefault(trader + " Nickname", trader);
+				
+				bool? onlyFoundInRaid = condition.OnlyFoundInRaid;
+				
+				if (onlyFoundInRaid is null)
+					continue;
 
 				questString.Append(_translation.Language[locale]["Found"] +
 								   " " +
-								   (condition.OnlyFoundInRaid ??
-									throw new NullReferenceException("condition.OnlyFoundInRaid was null")
+								   ((bool)onlyFoundInRaid
 									   ? "(✔) "
 									   : "") +
 								   "x" +
@@ -748,19 +752,19 @@ public static class Utils
 									? GetItemName(targetItem.Template, locale)
 									: string.Empty);
 							}
+							
+							unlockString.Append("↺ \"" +
+							                    questName +
+							                    "\"" +
+							                    (traderName == questGiverName ? "" : " " + questGiverName) +
+							                    "✔ @ " +
+							                    traderName +
+							                    " " +
+							                    _translation.Language[locale]["lv"] +
+							                    ll +
+							                    (partString.Length > 0 ? " ∈ " + partString : "") +
+							                    "\n");
 						}
-
-						unlockString.Append("↺ \"" +
-						                    questName +
-						                    "\"" +
-						                    (traderName == questGiverName ? "" : " " + questGiverName) +
-						                    "✔ @ " +
-						                    traderName +
-						                    " " +
-						                    _translation.Language[locale]["lv"] +
-						                    ll +
-						                    (partString.Length > 0 ? " ∈ " + partString : "") +
-						                    "\n");
 					}
 				}
 			}
