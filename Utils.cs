@@ -651,19 +651,20 @@ public static class Utils
 		{
 			MongoId questId = questDict.Key;
 			Quest quest = questDict.Value;
-			string questName = quest.QuestName ?? 
-			                   throw new NullReferenceException("Missing quest name for " + quest.QuestName);
+			string? questName = quest.QuestName;
+			List<QuestCondition>? questCondition = quest.Conditions.AvailableForFinish;
 			
-			List<QuestCondition> questCondition = quest.Conditions.AvailableForFinish ?? 
-			                                      throw new NullReferenceException("Missing condition for " + quest.Conditions.AvailableForFinish);
+			if (questName is null ||
+			    questCondition is null)
+				continue;
 			
 			foreach (QuestCondition condition in questCondition)
 			{
+				List<string>? targetList = condition.Target?.List;
+				
 				if (condition.Type != "HandoverItem" ||
-				    !((condition.Target ??
-				       throw new NullReferenceException("Condition.Target was null")).List ??
-				      throw new NullReferenceException("Condition.Target.List was null"))
-					    .Contains(itemId)) 
+				    targetList is null ||
+				    !targetList.Contains(itemId))
 					continue;
 				
 				MongoId trader = _quests[questId].TraderId;
@@ -707,17 +708,18 @@ public static class Utils
 			{
 				foreach (Reward questReward in questRewards)
 				{
-					if (questReward.Type != RewardType.Item ||
-					    questReward.TraderId is null)
+					if (questReward.TraderId is null)
 						continue;
 					
 					MongoId questGiverId = _quests[questId].TraderId;
-					string traderId = questReward.TraderId.ToString() ?? "QuestInfoGenerator() traderId is null";
+					string? traderId = questReward.TraderId.ToString();
+					
+					if (traderId is null)
+						continue;
+					
 					int ll = questReward.LoyaltyLevel ?? 0;
-					string traderName = _locales[_userLocale]
-						.GetValueOrDefault(traderId + " Nickname", traderId);
-					string questGiverName = _locales[_userLocale]
-						.GetValueOrDefault(questGiverId + " Nickname", questGiverId);
+					string traderName = _locales[_userLocale].GetValueOrDefault(traderId + " Nickname", traderId);
+					string questGiverName = _locales[_userLocale].GetValueOrDefault(questGiverId + " Nickname", questGiverId);
 
 					if (questReward.Items is null)
 						continue;
@@ -725,39 +727,41 @@ public static class Utils
 					foreach (Item item in questReward.Items)
 					{
 						if (questReward.Target is null)
-							throw new  NullReferenceException("questReward.Target is null");
-						
-						if (item.Template != itemId &&
-						    item.Id == questReward.Target) 
 							continue;
 
-						Item? targetItem = null;
-						
-						foreach (var x in questReward.Items)
+						if (item.Template.ToString().Contains(itemId))
 						{
-							if (x.Id != questReward.Target) 
-								continue;
-							
-							targetItem = x;
-							break;
-						}
-						
-						partString.Clear().Append(targetItem != null 
-										? GetItemName(targetItem.Template, locale)
-										: string.Empty);
-					}
+							if (item.Id == questReward.Target)
+							{
+								Item? targetItem = null;
 
-					unlockString.Append("↺ \"" +
-										questName +
-										"\"" +
-										(traderName == questGiverName ? "" : " " + questGiverName) +
-										"✔ @ " +
-										traderName +
-										" " +
-										_translation.Language[locale]["lv"] +
-										ll +
-										(partString.Length > 0 ? " ∈ " + partString : "") +
-										"\n");
+								foreach (var x in questReward.Items)
+								{
+									if (x.Id != questReward.Target)
+										continue;
+
+									targetItem = x;
+									break;
+								}
+
+								partString.Clear().Append(targetItem != null
+									? GetItemName(targetItem.Template, locale)
+									: string.Empty);
+							}
+						}
+
+						unlockString.Append("↺ \"" +
+						                    questName +
+						                    "\"" +
+						                    (traderName == questGiverName ? "" : " " + questGiverName) +
+						                    "✔ @ " +
+						                    traderName +
+						                    " " +
+						                    _translation.Language[locale]["lv"] +
+						                    ll +
+						                    (partString.Length > 0 ? " ∈ " + partString : "") +
+						                    "\n");
+					}
 				}
 			}
 		}
