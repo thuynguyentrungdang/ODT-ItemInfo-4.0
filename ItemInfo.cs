@@ -413,21 +413,22 @@ public class ItemInfo(
 	public required string UserLocale { get; set; }
 	public required Dictionary<string, string> i18n { get; set; }
 	public required Dictionary<string, string> Localization { get; set; }
+	public string PathToMod { get; set; }
 	
     public Task OnLoad()
     {
-	    string pathToMod = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
+	    PathToMod = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
 		
 	    // Get configs
-	    Config = modHelper.GetJsonDataFromFile<ModConfig>(pathToMod, "config/config.json");
-	    EasyAmmoName = modHelper.GetJsonDataFromFile<ModEasyAmmoName>(pathToMod, "config/easyammoname.json");
+	    Config = modHelper.GetJsonDataFromFile<ModConfig>(PathToMod, "config/config.json");
+	    EasyAmmoName = modHelper.GetJsonDataFromFile<ModEasyAmmoName>(PathToMod, "config/easyammoname.json");
 	    
 	    // Get tiers list
-	    Tiers = modHelper.GetJsonDataFromFile<ModTiers>(pathToMod, "config/tiers.json");
-	    TiersHex = modHelper.GetJsonDataFromFile<ModTiersHex>(pathToMod, "config/tiers_hex.json");
+	    Tiers = modHelper.GetJsonDataFromFile<ModTiers>(PathToMod, "config/tiers.json");
+	    TiersHex = modHelper.GetJsonDataFromFile<ModTiersHex>(PathToMod, "config/tiers_hex.json");
 	    
 	    // Get translations
-	    Translation = jsonUtil.DeserializeFromFile<ModTranslation>(pathToMod + "/config/translations.json") ?? 
+	    Translation = jsonUtil.DeserializeFromFile<ModTranslation>(PathToMod + "/config/translations.json") ?? 
 	                  throw new NullReferenceException("Could not find translations file");
 	    ModTranslationDebug = Translation.ModTranslationDebug;
 	    Translation.Language = new Dictionary<string, Dictionary<string, string>>();
@@ -493,6 +494,7 @@ public class ItemInfo(
     {
 	    TranslationDebug();
 	    QuestRewards();
+	    EasyAmmoNameHandling();
 	    
 	    Stopwatch stopwatch = Stopwatch.StartNew();
 	    
@@ -606,6 +608,41 @@ public class ItemInfo(
 				    }
 			    }
 		    }
+	    }
+    }
+
+    public void EasyAmmoNameHandling()
+    {
+	    if (!EasyAmmoName.Enabled) 
+		    return;
+	    
+	    foreach (KeyValuePair<string, ModEasyAmmoName.Items> kvpAmmoName in EasyAmmoName.ModItems)
+	    {
+		    string itemTpl = kvpAmmoName.Key;
+		    ModEasyAmmoName.Items ammoNames = kvpAmmoName.Value;
+
+		    if (!string.IsNullOrEmpty(ammoNames.Name) &&
+		        Items.ContainsKey(itemTpl))
+			    //Utils.ReplaceName(itemTpl, ammoNames.Name);
+				Utils._locales[UserLocale][itemTpl + " Name"] = ammoNames.Name;
+
+		    if (string.IsNullOrEmpty(ammoNames.ShortName) ||
+		        !Items.ContainsKey(itemTpl)) 
+			    continue;
+		    
+		    if (ammoNames.ShortName.Length > 9)
+		    {
+			    logger.Warning("Provided shortname was too long! Shortnames have a maximum of 9 characters.");
+			    logger.Warning("Trimming " +
+			                   ammoNames.ShortName +
+			                   " to " +
+			                   ammoNames.ShortName.Substring(0, 9));
+
+			    ammoNames.ShortName = ammoNames.ShortName.Substring(0, 9);
+		    }
+
+		    //Utils.ReplaceShortName(itemTpl, ammoNames.ShortName);
+		    Utils._locales[UserLocale][itemTpl + " ShortName"] = ammoNames.ShortName;
 	    }
     }
 
@@ -755,11 +792,41 @@ public class ItemInfo(
 			    }
 		    }
 
-		    if (EasyAmmoName.Enabled)
+		    if (EasyAmmoName.Enabled &&
+		        (Items[itemId].Parent == "5485a8684bdc2da71d8b4567" ||
+		         Items[itemId].Parent == "543be5cb4bdc2deb348b4568"))
 		    {
+			    string? templateItemName = templateItem.Name;
+			    string? ammoType = itemProperties.AmmoType;
 			    
+			    if (templateItemName is not null)
+			    {
+				    if (!EasyAmmoName.ModItems.ContainsKey(itemId) &&
+				        !templateItemName.ToLower().Contains("shrapnel") &&
+				        !templateItemName.ToLower().Contains("patron_rsp") &&
+				        !templateItemName.ToLower().Contains("patron_26x75"))
+				    {
+					    if (!string.IsNullOrEmpty(ammoType) ||
+					        ammoType == "bullet" ||
+					        ammoType == "grenade")
+					    {
+						    logger.Warning("the item :" +
+						                   templateItemName +
+						                   " is not in tpl list: " +
+						                   itemId);
+
+						    EasyAmmoName.ModItems[itemId] = new ModEasyAmmoName.Items()
+						    {
+								Name = "FIXME " + Localization[itemId + " Name"],
+								ShortName = Localization[itemId + " ShortName"],
+								Description = "",
+						    };
+					    }
+
+				    }
+			    }
 		    }
-		    
+			    
 		    // BulletStatsInName
 		    if (Config.ModBulletStatsInName.Enabled &&
 		        itemProperties.AmmoType is "bullet" or "buckshot")
@@ -1283,6 +1350,14 @@ public class ItemInfo(
 		                "\" : " +
 		                descriptionString);
 	    }
+	    
+	    JsonSerializerOptions options = new JsonSerializerOptions
+	    {
+		    WriteIndented = true
+	    };
+	    string jsonString = JsonSerializer.Serialize(EasyAmmoName, options);
+	    
+	    File.WriteAllText(PathToMod + "/config/easyammoname.json", jsonString);
     }
 }
 

@@ -7,9 +7,14 @@ public class ModEasyAmmoName
     [JsonPropertyName("enabled")]
     public bool Enabled { get; set; }
     [JsonPropertyName("items")]
-    public Items ModItems { get; set; }
+    public Dictionary<string, Items> ModItems { get; set; }
     public class Items
     {
-        public Dictionary<string, Dictionary<string, string>> AmmoEntry { get; set; }
+        [JsonPropertyName("Name")]
+        public string Name { get; set; }
+        [JsonPropertyName("ShortName")]
+        public string ShortName { get; set; }
+        [JsonPropertyName("Description")]
+        public string Description { get; set; }
     }
 }

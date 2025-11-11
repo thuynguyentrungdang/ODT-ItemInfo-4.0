@@ -29,7 +29,7 @@ public static class Utils
 	private static Dictionary<MongoId, TemplateItem> _items = null!;
 	private static List<HandbookItem> _handbookItems = null!;
 	private static Dictionary<MongoId, Trader> _traders = null!;
-	private static readonly Dictionary<string, Dictionary<string, string>> _locales = new();
+	public static Dictionary<string, Dictionary<string, string>> _locales = new();
 	private static HashSet<string> _serverSupportedLocale = null!;
 	private static Dictionary<string, LazyLoad<Dictionary<string, string>>> _lazyloadList = new();
 	private static HideoutProductionData _hideoutProductionData = null!;
@@ -232,13 +232,12 @@ public static class Utils
 				                                      localeData[itemId + " " + type] + 
 				                                      addToName[^12..];
 				    break;
-			    case "replace":
-				    localeData[itemId + " " + type] = addToName;
-				    break;
 			    default:
 				    localeData[itemId + " " + type] = _locales[lang][itemId + " " + type];
 				    break;
 		    }
+		    
+		    //_locales[lang][itemId + " " + type] = localeData[itemId + " " + type];
 		    
 		    return localeData;
 	    });
@@ -268,6 +267,22 @@ public static class Utils
 	    }
     }
     
+    public static void ReplaceName(string itemId, string replaceName, string lang = "")
+    {
+	    if (lang == "")
+	    {
+		    foreach (var locale in _serverSupportedLocale)
+		    {
+			    if (_locales.ContainsKey(locale))
+				    AddToName(itemId, replaceName, locale);
+		    }
+	    }
+	    else
+	    {
+		    _locales[lang][itemId + " Name"] = replaceName;
+	    }
+    }
+    
     public static void AddToShortName(string itemId, string addToShortName, string place, string lang = "")
     {
 	    if (lang == "")
@@ -292,6 +307,22 @@ public static class Utils
 	    }
     }
     
+    public static void ReplaceShortName(string itemId, string replaceShortName, string lang = "")
+    {
+	    if (lang == "")
+	    {
+		    foreach (var locale in _serverSupportedLocale)
+		    {
+			    if (_locales.ContainsKey(locale))
+				    AddToName(itemId, replaceShortName, locale);
+		    }
+	    }
+	    else
+	    {
+		    _locales[lang][itemId + " ShortName"] = replaceShortName;
+	    }
+    }
+    
     public static void AddToDescription(string itemId, string addToDescription, string place, string lang = "")
     {
 	    if (lang == "")
@@ -313,6 +344,22 @@ public static class Utils
 								itemId,
 								addToDescription,
 								originalDescription);
+	    }
+    }
+    
+    public static void ReplaceDescription(string itemId, string replaceDescription, string lang = "")
+    {
+	    if (lang == "")
+	    {
+		    foreach (var locale in _serverSupportedLocale)
+		    {
+			    if (_locales.ContainsKey(locale))
+				    AddToName(itemId, replaceDescription, locale);
+		    }
+	    }
+	    else
+	    {
+		    _locales[lang][itemId + " Description"] = replaceDescription;
 	    }
     }
 
