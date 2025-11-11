@@ -232,6 +232,9 @@ public static class Utils
 				                                      localeData[itemId + " " + type] + 
 				                                      addToName[^12..];
 				    break;
+			    case "replace":
+				    localeData[itemId + " " + type] = addToName;
+				    break;
 			    default:
 				    localeData[itemId + " " + type] = _locales[lang][itemId + " " + type];
 				    break;

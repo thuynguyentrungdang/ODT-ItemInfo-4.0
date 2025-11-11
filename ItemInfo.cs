@@ -19,22 +19,8 @@ using SPTarkov.Server.Core.Utils;
 
 namespace ItemInfo;
 
-/// <summary>
-/// This is the replacement for the former package.json data. This is required for all mods.
-///
-/// This is where we define all the metadata associated with this mod.
-/// You don't have to do anything with it, other than fill it out.
-/// All properties must be overriden, properties you don't use may be left null.
-/// It is read by the mod loader when this mod is loaded.
-/// </summary>
 public record ModMetadata : AbstractModMetadata
 {
-    /// <summary>
-    /// Any string can be used for a modId, but it should ideally be unique and not easily duplicated
-    /// a 'bad' ID would be: "mymod", "mod1", "questmod"
-    /// It is recommended (but not mandatory) to use the reverse domain name notation,
-    /// see: https://docs.oracle.com/javase/tutorial/java/package/namingpkgs.html
-    /// </summary>
     public override string ModGuid { get; init; } = "com.odt.iteminfo";
     public override string Name { get; init; } = "ItemInfo";
     public override string Author { get; init; } = "ODT";
@@ -413,6 +399,7 @@ public class ItemInfo(
 
 	private Timer? _timer;
 	public required ModConfig Config;
+	public required ModEasyAmmoName EasyAmmoName { get; set; }
 	public required ModTiers Tiers { get; set; }
 	public required ModTiersHex TiersHex { get; set; }
 	public required ModTranslation Translation { get; set; }
@@ -433,6 +420,7 @@ public class ItemInfo(
 		
 	    // Get configs
 	    Config = modHelper.GetJsonDataFromFile<ModConfig>(pathToMod, "config/config.json");
+	    EasyAmmoName = modHelper.GetJsonDataFromFile<ModEasyAmmoName>(pathToMod, "config/easyammoname.json");
 	    
 	    // Get tiers list
 	    Tiers = modHelper.GetJsonDataFromFile<ModTiers>(pathToMod, "config/tiers.json");
@@ -766,6 +754,11 @@ public class ItemInfo(
 						    : Utils.BarterInfoGenerator(Utils.BarterResolver(ammo ?? "")).rarityArray.Min();
 			    }
 		    }
+
+		    if (EasyAmmoName.Enabled)
+		    {
+			    
+		    }
 		    
 		    // BulletStatsInName
 		    if (Config.ModBulletStatsInName.Enabled &&
@@ -1053,25 +1046,26 @@ public class ItemInfo(
 				    double? gain = itemProperties.CompressorGain;
 				    double? thresh = itemProperties.CompressorThreshold;
 
-				    headsetDescription.Append(i18n["AmbientVolume"] +
-											 ": " +
-											 Math.Round(((itemProperties.AmbientCompressorSendLevel ?? -10) + 10 +
-											             (itemProperties.EffectsReturnsGrEnvCommonCompressorSendLeveloupVolume ?? -7) + 7 +
-											             (itemProperties.EnvNatureCompressorSendLevel ?? -5) + 5 +
-											             (itemProperties.EnvTechnicalCompressorSendLevel ?? -7) + 7) * 10) / 10 +
-											 "db | " +
-											 i18n["Boost"] +
-											 ": +" +
-											 gain + Math.Abs((thresh ?? -20) + 20) +
-											 "db" +
-											 (itemProperties.Distortion > 0
-												 ? " | " +
-												   i18n["Distortion"] +
-												   ": " +
-												   Math.Round((itemProperties.Distortion ?? 0) * 100) +
-												   "%"
-												 : "") +
-											 "\n\n");
+				    headsetDescription.Append("<color=#f59542>" +
+				                              i18n["AmbientVolume"] +
+				                              ": " +
+				                              Math.Round(((itemProperties.AmbientCompressorSendLevel ?? -10) + 10 +
+				                                          (itemProperties.EffectsReturnsGrEnvCommonCompressorSendLeveloupVolume ?? -7) + 7 +
+				                                          (itemProperties.EnvNatureCompressorSendLevel ?? -5) + 5 +
+				                                          (itemProperties.EnvTechnicalCompressorSendLevel ?? -7) + 7) * 10) / 10 +
+				                              "db</color> | " +
+				                              i18n["Boost"] +
+				                              ": +" +
+				                              gain + Math.Abs((thresh ?? -20) + 20) +
+				                              "db" +
+				                              (itemProperties.Distortion > 0
+					                              ? " | " +
+					                                i18n["Distortion"] +
+					                                ": " +
+					                                Math.Round((itemProperties.Distortion ?? 0) * 100) +
+					                                "%"
+					                              : "") +
+				                              "\n\n");
 			    }
 		    }
 
@@ -1254,9 +1248,12 @@ public class ItemInfo(
 				    if (Config.ModRarityRecolor.AddTierNameToPricesInfo &&
 				        !string.IsNullOrEmpty(tier))
 				    {
-					    priceString.Append(" | " + 
+					    priceString.Append(" | " +
+					                       "<color=" +
+					                       tiersHexcode +
+					                       ">" +
 					                       tier +
-					                       "\n\n");
+					                       "</color>\n\n");
 				    }
 			    }
 		    }

@@ -36,4 +36,5 @@
         <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(ModsDirectoryPath)" ContinueOnError="false" />
         <Message Text="Files copied" />
     </Target>
+    
 </Project>
