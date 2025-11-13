@@ -623,7 +623,6 @@ public class ItemInfo(
 
 		    if (!string.IsNullOrEmpty(ammoNames.Name) &&
 		        Items.ContainsKey(itemTpl))
-			    //Utils.ReplaceName(itemTpl, ammoNames.Name);
 				Utils._locales[UserLocale][itemTpl + " Name"] = ammoNames.Name;
 
 		    if (string.IsNullOrEmpty(ammoNames.ShortName) ||
@@ -640,9 +639,11 @@ public class ItemInfo(
 
 			    ammoNames.ShortName = ammoNames.ShortName.Substring(0, 9);
 		    }
-
-		    //Utils.ReplaceShortName(itemTpl, ammoNames.ShortName);
+		    
 		    Utils._locales[UserLocale][itemTpl + " ShortName"] = ammoNames.ShortName;
+		    
+		    // logger.Info("Name: " + Utils._locales[UserLocale][itemTpl + " Name"]);
+		    // logger.Info("ShortName: " + Utils._locales[UserLocale][itemTpl + " ShortName"]);
 	    }
     }
 
@@ -689,18 +690,18 @@ public class ItemInfo(
 		    logString.Clear();
 		    
 		    itemName.Append(Utils.GetItemName(kvp.Key));
-		    logString.Append("Processing item " +
-		                     (a + 1) +
-		                     "/" +
-		                     Items.Count +
-		                     ": " +
-		                     itemName);
 
 #if DEBUG
+			logString.Append("Processing item " +
+										 (a + 1) +
+										 "/" +
+										 Items.Count +
+										 ": " +
+										 itemName);
+
 		    logger.Info(logString.ToString());
 		    a += 1;
 #endif
-		    
 		    MongoId itemId = kvp.Key;
 		    TemplateItem templateItem = kvp.Value;
 		    HandbookItem? itemInHandbook = Utils.GetItemInHandbook(itemId);
@@ -738,6 +739,9 @@ public class ItemInfo(
 
 		    itemBestTraderName.Append(itemBestVendor.Item2);
 		    barterResourceInfo.Append(Utils.BarterResourceInfoGenerator(itemId, UserLocale));
+		    
+		    Utils.RefreshName(itemId, UserLocale);
+		    Utils.RefreshShortName(itemId, UserLocale);
 
 		    // UseBsgStaticFleaBanList
 		    if (Config.UseBsgStaticFleaBanList.Enabled)

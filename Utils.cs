@@ -267,19 +267,25 @@ public static class Utils
 	    }
     }
     
-    public static void ReplaceName(string itemId, string replaceName, string lang = "")
+    public static void RefreshName(string itemId, string lang = "")
     {
 	    if (lang == "")
 	    {
 		    foreach (var locale in _serverSupportedLocale)
 		    {
 			    if (_locales.ContainsKey(locale))
-				    AddToName(itemId, replaceName, locale);
+				    RefreshName(itemId, locale);
 		    }
 	    }
 	    else
 	    {
-		    _locales[lang][itemId + " Name"] = replaceName;
+		    AddLocaleTransformer(_lazyloadList,
+								lang,
+								"Name",
+								"",
+								itemId,
+								"",
+								"");
 	    }
     }
     
@@ -307,19 +313,25 @@ public static class Utils
 	    }
     }
     
-    public static void ReplaceShortName(string itemId, string replaceShortName, string lang = "")
+    public static void RefreshShortName(string itemId, string lang = "")
     {
 	    if (lang == "")
 	    {
 		    foreach (var locale in _serverSupportedLocale)
 		    {
 			    if (_locales.ContainsKey(locale))
-				    AddToName(itemId, replaceShortName, locale);
+				    RefreshShortName(itemId, locale);
 		    }
 	    }
 	    else
 	    {
-		    _locales[lang][itemId + " ShortName"] = replaceShortName;
+		    AddLocaleTransformer(_lazyloadList,
+			    lang,
+			    "ShortName",
+			    "",
+			    itemId,
+			    "",
+			    "");
 	    }
     }
     
