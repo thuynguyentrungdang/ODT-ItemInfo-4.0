@@ -1210,47 +1210,47 @@ public class ItemInfo(
 				    {
 					    case 7:
 						    tier = i18n["OVERPOWERED"];
-						    itemProperties.BackgroundColor = TiersHex["OVERPOWERED"];
+						    itemProperties.BackgroundColor = Tiers["OVERPOWERED"];
 						    tiersHexcode.Clear().Append(TiersHex["OVERPOWERED"]);
 						    break;
 					    case 1:
 						    tier = i18n["COMMON"];
-						    itemProperties.BackgroundColor = TiersHex["COMMON"];
+						    itemProperties.BackgroundColor = Tiers["COMMON"];
 						    tiersHexcode.Clear().Append(TiersHex["COMMON"]);
 						    break;
 					    case 2:
 						    tier = i18n["RARE"];
-						    itemProperties.BackgroundColor = TiersHex["RARE"];
+						    itemProperties.BackgroundColor = Tiers["RARE"];
 						    tiersHexcode.Clear().Append(TiersHex["RARE"]);
 						    break;
 					    case 3:
 						    tier = i18n["EPIC"];
-						    itemProperties.BackgroundColor = TiersHex["EPIC"];
+						    itemProperties.BackgroundColor = Tiers["EPIC"];
 						    tiersHexcode.Clear().Append(TiersHex["EPIC"]);
 						    break;
 					    case 4:
 						    tier = i18n["LEGENDARY"];
-						    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
+						    itemProperties.BackgroundColor = Tiers["LEGENDARY"];
 						    tiersHexcode.Clear().Append(TiersHex["LEGENDARY"]);
 						    break;
 					    case 5:
 						    tier = i18n["UBER"];
-						    itemProperties.BackgroundColor = TiersHex["UBER"];
+						    itemProperties.BackgroundColor = Tiers["UBER"];
 						    tiersHexcode.Clear().Append(TiersHex["UBER"]);
 						    break;
 					    case 6:
 						    tier = i18n["UNOBTAINIUM"];
-						    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
+						    itemProperties.BackgroundColor = Tiers["UNOBTAINIUM"];
 						    tiersHexcode.Clear().Append(TiersHex["UNOBTAINIUM"]);
 						    break;
 					    case 8:
 						    tier = i18n["CUSTOM"];
-						    itemProperties.BackgroundColor = TiersHex["CUSTOM"];
+						    itemProperties.BackgroundColor = Tiers["CUSTOM"];
 						    tiersHexcode.Clear().Append(TiersHex["CUSTOM"]);
 						    break;
 					    default: // itemRarity >= 9
 						    tier = i18n["CUSTOM2"];
-						    itemProperties.BackgroundColor = TiersHex["CUSTOM2"];
+						    itemProperties.BackgroundColor = Tiers["CUSTOM2"];
 						    tiersHexcode.Clear().Append(TiersHex["CUSTOM2"]);
 						    break;
 				    }
@@ -1283,32 +1283,32 @@ public class ItemInfo(
 					    {
 						    case var _ when itemValue < int.Parse(Tiers["COMMON_VALUE_FALLBACK"]):
 							    tier = i18n["COMMON"];
-							    itemProperties.BackgroundColor = TiersHex["COMMON"];
+							    itemProperties.BackgroundColor = Tiers["COMMON"];
 							    tiersHexcode.Clear().Append(TiersHex["COMMON"]);
 							    break;
 						    case var _ when itemValue < int.Parse(Tiers["RARE_VALUE_FALLBACK"]):
 							    tier = i18n["RARE"];
-							    itemProperties.BackgroundColor = TiersHex["RARE"];
+							    itemProperties.BackgroundColor = Tiers["RARE"];
 							    tiersHexcode.Clear().Append(TiersHex["RARE"]);
 							    break;
 						    case var _ when itemValue < int.Parse(Tiers["EPIC_VALUE_FALLBACK"]):
 							    tier = i18n["EPIC"];
-							    itemProperties.BackgroundColor = TiersHex["EPIC"];
+							    itemProperties.BackgroundColor = Tiers["EPIC"];
 							    tiersHexcode.Clear().Append(TiersHex["EPIC"]);
 							    break;
 						    case var _ when itemValue < int.Parse(Tiers["LEGENDARY_VALUE_FALLBACK"]):
 							    tier = i18n["LEGENDARY"];
-							    itemProperties.BackgroundColor = TiersHex["LEGENDARY"];
+							    itemProperties.BackgroundColor = Tiers["LEGENDARY"];
 							    tiersHexcode.Clear().Append(TiersHex["LEGENDARY"]);
 							    break;
 						    case var _ when itemValue < int.Parse(Tiers["UBER_VALUE_FALLBACK"]):
 							    tier = i18n["UBER"];
-							    itemProperties.BackgroundColor = TiersHex["UBER"];
+							    itemProperties.BackgroundColor = Tiers["UBER"];
 							    tiersHexcode.Clear().Append(TiersHex["UBER"]);
 							    break;
 						    default:
 							    tier = i18n["UNOBTAINIUM"];
-							    itemProperties.BackgroundColor = TiersHex["UNOBTAINIUM"];
+							    itemProperties.BackgroundColor = Tiers["UNOBTAINIUM"];
 							    tiersHexcode.Clear().Append(TiersHex["UNOBTAINIUM"]);
 							    break;
 					    }

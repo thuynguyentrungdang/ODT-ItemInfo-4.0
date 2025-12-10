@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <OutputType>Library</OutputType>
-        <Version>0.0.1</Version>
+        <Version>2.0.3</Version>
         <!-- The two lines below will set the output path for the binaries -->
         <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -17,13 +17,9 @@
         <PackageReference Include="SPTarkov.DI" Version="4.0.3" />
         <PackageReference Include="SPTarkov.Server.Core" Version="4.0.3" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <None Include="ODT-ItemInfo-4.0.csproj.user" />
-    </ItemGroup>
 
     <PropertyGroup>
-        <SPTPath>F:\SPT_4.0\SPT</SPTPath>
+        <SPTPath>C:\Tarkov\FIKA-4.0\SPT</SPTPath>
         <ModsDirectoryPath>$(SPTPath)\user\mods\$(MSBuildProjectName)</ModsDirectoryPath>
     </PropertyGroup>
 
@@ -31,9 +27,12 @@
         <Message Importance="high" Text="Copying mods to $(ModsDirectoryPath)" />
         <ItemGroup>
             <FilesToCopy Include="$(OutputPath)$(TargetName)$(TargetExt)" />
-            <FilesToCopy Include="$(OutputPath)$(TargetName).pdb" />
+            <FilesToCopy Include="$(OutputPath)$(TargetName).pdb" Condition=" '$(Configuration)' == 'Debug'" />
+            <CopyConfig Include="$(OutputPath)config\*.*" />
         </ItemGroup>
+        <RemoveDir Directories="$(ModsDirectoryPath)" />
         <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(ModsDirectoryPath)" ContinueOnError="false" />
+        <Copy SourceFiles="@(CopyConfig)" DestinationFolder="$(ModsDirectoryPath)\config" ContinueOnError="false" />
         <Message Text="Files copied" />
     </Target>
     
