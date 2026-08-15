@@ -195,11 +195,23 @@ public static class Utils
 
     public static double? GetFleaPrice(string itemId)
     {
-	    if (_templates.Prices.ContainsKey(itemId) &&
-	        _templates.Prices[itemId] >= 0)
-		    return _templates.Prices[itemId];
+	    try
+	    {
+		    if (_templates.Prices.ContainsKey(itemId) &&
+		        _templates.Prices[itemId] >= 0)
+			    return _templates.Prices[itemId];
 
-	    return GetItemInHandbook(itemId)?.Price >= 0 ? GetItemInHandbook(itemId)?.Price : 0;
+		    return GetItemInHandbook(itemId)?.Price >= 0 ? GetItemInHandbook(itemId)?.Price : 0;
+	    }
+	    catch (Exception e)
+	    {
+		    _logger.Warning("[ItemInfo] GetFleaPrice() failed for item \"" +
+							GetItemName(itemId) + " with id: " +
+							itemId +
+							"\" because of another mod. Continuing safely. Exception: " + e);
+		    return 0;
+	    }
+	    
     }
 
     /*public static double? GetBestPrice(string itemId)
@@ -699,6 +711,7 @@ public static class Utils
 	
 					foreach (BarterScheme barterResource in barterList)
 					{
+						
 						double? fleaPrice = GetFleaPrice(barterResource.Template);
 						
 						if (fleaPrice is null)
