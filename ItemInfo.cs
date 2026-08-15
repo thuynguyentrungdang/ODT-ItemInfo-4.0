@@ -5,6 +5,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -154,14 +155,24 @@ public class ItemInfo(
     private void ItemInfoMain()
     {
 	    TranslationDebug();
-	    QuestRewards();
-	    
+
+	    string cacheFingerprint = BuildCacheFingerprint();
 	    Stopwatch stopwatch = Stopwatch.StartNew();
-	    
+
+	    if (TryApplyCache(cacheFingerprint))
+	    {
+		    stopwatch.Stop();
+		    logger.Info("[ItemInfo] Applied cached item info in " + stopwatch.ElapsedMilliseconds + " ms.");
+		    return;
+	    }
+
+	    QuestRewards();
 	    logger.Info("[ItemInfo] Processing items...");
 	    ItemHandling();
 	    stopwatch.Stop();
 	    logger.Info("[ItemInfo] Completed processing " + Items.Count +" items in " + stopwatch.ElapsedMilliseconds + " ms.");
+
+	    SaveCache(cacheFingerprint);
     }
 
     private void TranslationDebug()
@@ -270,6 +281,139 @@ public class ItemInfo(
 		    }
 	    }
     }
+
+    private string CacheDirectory => System.IO.Path.Combine(PathToMod, "cache");
+    private string CachePath => System.IO.Path.Combine(CacheDirectory, "iteminfo-cache.json");
+
+    private string BuildCacheFingerprint()
+    {
+	    using SHA256 sha256 = SHA256.Create();
+
+	    AddHashText(sha256, "ItemInfo:" + new ModMetadata().Version);
+	    AddHashText(sha256, "Locale:" + UserLocale);
+	    AddHashFile(sha256, System.IO.Path.Combine(PathToMod, "config", "config.json"));
+	    AddHashFile(sha256, System.IO.Path.Combine(PathToMod, "config", "bsgblacklist.json"));
+	    AddHashFile(sha256, System.IO.Path.Combine(PathToMod, "config", "tiers.json"));
+	    AddHashFile(sha256, System.IO.Path.Combine(PathToMod, "config", "tiers_hex.json"));
+	    AddHashFile(sha256, System.IO.Path.Combine(PathToMod, "config", "translations.json"));
+	    AddModsFingerprint(sha256);
+	    sha256.TransformFinalBlock(Array.Empty<byte>(), 0, 0);
+
+	    return Convert.ToHexString(sha256.Hash!);
+    }
+
+    private void AddModsFingerprint(HashAlgorithm hashAlgorithm)
+    {
+	    DirectoryInfo? modsDirectory = Directory.GetParent(PathToMod);
+
+	    if (modsDirectory is null)
+		    return;
+
+	    foreach (AbstractModMetadata modMetadata in AppDomain.CurrentDomain.GetAssemblies()
+	             .Where(assembly => !string.IsNullOrEmpty(assembly.Location) &&
+	                                assembly.Location.StartsWith(modsDirectory.FullName, StringComparison.OrdinalIgnoreCase))
+	             .SelectMany(assembly => assembly.GetTypes())
+	             .Where(type => !type.IsAbstract && typeof(AbstractModMetadata).IsAssignableFrom(type))
+	             .Select(type => (AbstractModMetadata)Activator.CreateInstance(type)!)
+	             .OrderBy(metadata => metadata.ModGuid, StringComparer.OrdinalIgnoreCase)
+	             .ThenBy(metadata => metadata.Version.ToString(), StringComparer.OrdinalIgnoreCase))
+	    {
+		    AddHashText(hashAlgorithm, modMetadata.ModGuid);
+		    AddHashText(hashAlgorithm, modMetadata.Version.ToString());
+		    AddHashText(hashAlgorithm, modMetadata.SptVersion.ToString());
+	    }
+    }
+
+    private static void AddHashFile(HashAlgorithm hashAlgorithm, string path)
+    {
+	    AddHashText(hashAlgorithm, path);
+
+	    if (!File.Exists(path))
+		    return;
+
+	    byte[] bytes = File.ReadAllBytes(path);
+	    hashAlgorithm.TransformBlock(bytes, 0, bytes.Length, null, 0);
+    }
+
+    private static void AddHashText(HashAlgorithm hashAlgorithm, string value)
+    {
+	    byte[] bytes = Encoding.UTF8.GetBytes(value + "\n");
+	    hashAlgorithm.TransformBlock(bytes, 0, bytes.Length, null, 0);
+    }
+
+    private bool TryApplyCache(string fingerprint)
+    {
+	    if (!File.Exists(CachePath))
+		    return false;
+
+	    CacheFile? cache = JsonSerializer.Deserialize<CacheFile>(File.ReadAllText(CachePath));
+
+	    if (cache is null ||
+	        cache.Fingerprint != fingerprint ||
+	        cache.Locale != UserLocale)
+		    return false;
+
+	    foreach (CachedItemInfoPatch item in cache.Items)
+	    {
+		    if (!Items.TryGetValue(item.Id, out TemplateItem? templateItem))
+			    continue;
+
+		    if (item.Name is not null)
+			    Utils.SetLocaleValue(item.Id, "Name", item.Name, UserLocale);
+
+		    if (item.ShortName is not null)
+			    Utils.SetLocaleValue(item.Id, "ShortName", item.ShortName, UserLocale);
+
+		    if (!string.IsNullOrEmpty(item.DescriptionPrefix))
+			    Utils.AddToDescription(item.Id, item.DescriptionPrefix, "prepend", UserLocale);
+
+		    if (templateItem.Properties is not null && item.BackgroundColor is not null)
+			    templateItem.Properties.BackgroundColor = item.BackgroundColor;
+	    }
+
+	    return true;
+    }
+
+    private void SaveCache(string fingerprint)
+    {
+	    Directory.CreateDirectory(CacheDirectory);
+
+	    CacheFile cache = new()
+	    {
+		    Fingerprint = fingerprint,
+		    Locale = UserLocale,
+		    Items = Items.Select(kvp => new CachedItemInfoPatch
+		    {
+			    Id = kvp.Key.ToString(),
+			    Name = Utils.GetItemName(kvp.Key, UserLocale),
+			    ShortName = Utils.GetItemShortName(kvp.Key, UserLocale),
+			    DescriptionPrefix = BuildDescriptionPrefix(kvp.Key),
+			    BackgroundColor = kvp.Value.Properties?.BackgroundColor
+		    }).ToList()
+	    };
+
+	    File.WriteAllText(CachePath, JsonSerializer.Serialize(cache, new JsonSerializerOptions { WriteIndented = false }));
+	    logger.Info("[ItemInfo] Saved item info cache.");
+    }
+
+    private string BuildDescriptionPrefix(string itemId)
+    {
+	    if (!ItemDescription.TryGetValue(itemId, out ModItemDescription? itemDescription))
+		    return string.Empty;
+
+	    return itemDescription.PriceString +
+	           itemDescription.HeadsetDescription +
+	           itemDescription.ArmorDurabilityString +
+	           itemDescription.SlotEfficiencyString +
+	           itemDescription.UsedForQuestsString +
+	           itemDescription.UsedForHideoutString +
+	           itemDescription.BarterString +
+	           itemDescription.ProductionString +
+	           itemDescription.UsedForCraftingString +
+	           itemDescription.UsedForBarterString +
+	           itemDescription.AdvancedAmmoInfoString;
+    }
+
 
     private void ItemHandling()
     {
@@ -970,6 +1114,22 @@ public class ItemInfo(
 		    Utils.AddToDescription(itemId, descriptionString.ToString(), "prepend");
 	    }
     }
+}
+
+public sealed class CacheFile
+{
+	public string Fingerprint { get; set; } = string.Empty;
+	public string Locale { get; set; } = string.Empty;
+	public List<CachedItemInfoPatch> Items { get; set; } = [];
+}
+
+public sealed class CachedItemInfoPatch
+{
+	public string Id { get; set; } = string.Empty;
+	public string? Name { get; set; }
+	public string? ShortName { get; set; }
+	public string DescriptionPrefix { get; set; } = string.Empty;
+	public string? BackgroundColor { get; set; }
 }
 
 public class ModTiers : Dictionary<string, string>;
