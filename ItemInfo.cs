@@ -904,7 +904,6 @@ public class ItemInfo(
 
 	    foreach (KeyValuePair<MongoId, TemplateItem> kvp in Items)
 	    {
-		    
 		    descriptionString.Clear();
 
 		    MongoId itemId = kvp.Key;
