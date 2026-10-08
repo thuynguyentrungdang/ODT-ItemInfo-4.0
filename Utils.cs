@@ -1162,9 +1162,15 @@ public static class Utils
 						case "QuestComplete":
 							if (string.IsNullOrEmpty(requirement.QuestId))
 								break;
-							
+
+							if (!_locales[locale].TryGetValue(requirement.QuestId + " name", out string? questName))
+							{
+								_logger.Warning($"[ItemInfo] Missing locale key '{requirement.QuestId} name'.");
+								break;
+							}
+
 							questReq += " (" +
-							            _locales[locale][requirement.QuestId + " name"] +
+							            questName +
 							            "✔) ";
 							break;
 					}
