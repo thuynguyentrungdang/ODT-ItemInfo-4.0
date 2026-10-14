@@ -241,12 +241,28 @@ public static class Utils
 			    case "append":
 				    localeData[itemId + " " + type] = originalName + addToName;
 				    break;
+			    case "replace":
+				    localeData[itemId + " " + type] = addToName;
+				    break;
 		    }
 		    
 		    return localeData;
 	    });
     }
     
+    public static void SetLocaleValue(string itemId, string type, string value, string lang)
+    {
+	    AddLocaleTransformer(_lazyloadList,
+							lang,
+							type,
+							"replace",
+							itemId,
+							value,
+							"");
+
+	    _locales[lang][itemId + " " + type] = value;
+    }
+
     public static void AddToName(string itemId, string addToName, string place, string lang = "")
     {
 	    if (lang == "")
