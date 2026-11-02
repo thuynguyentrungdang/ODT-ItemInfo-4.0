@@ -889,7 +889,11 @@ public class ItemInfo(
 				    if (Config.ModRarityRecolor.AddColorToName)
 						Utils.AddColorToName(itemId, tiersHexCode.ToString(), UserLocale);
 				    
-				    Utils.AddColorToShortName(itemId, TiersHex["COMMON"], UserLocale);
+				    // ShortName is rendered directly by the client quick-slot caption (QuickSlotView.Caption).
+				    // A <color> tag there is applied per character and overrides the colour the game sets
+				    // for the selected slot, so the name stays light on the white selection card. Keep the
+				    // ShortName plain text, exactly like the non-UserLocale languages, so it can invert.
+				    // Utils.AddColorToShortName(itemId, TiersHex["COMMON"], UserLocale);
 
 				    if (Config.ModRarityRecolor.AddTierNameToPricesInfo &&
 				        !string.IsNullOrEmpty(tier))
