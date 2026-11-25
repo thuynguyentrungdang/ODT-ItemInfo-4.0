@@ -1,0 +1,67 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version tag (e.g. 3.1.0)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Publish as pre-release'
+        type: boolean
+        default: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      TAG: ${{ inputs.tag || github.ref_name }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check tag matches mod version
+        run: |
+          if ! grep -q "new(\"$TAG\")" ItemInfo.cs; then
+            echo "::error::ItemInfo.cs Version does not match tag $TAG"
+            exit 1
+          fi
+
+      - name: Build
+        # StagingDir override: csproj default is a Windows-only path (D:\Staging Area)
+        run: dotnet build ODT-ItemInfo-4.0.sln -c Release -p:StagingDir="$RUNNER_TEMP/staging"
+
+      - name: Package
+        run: |
+          DLL=$(find bin/Release -name ODT-ItemInfo-4.0.dll | head -n1)
+          [ -n "$DLL" ] || { echo "::error::built dll not found"; exit 1; }
+          OUT=$(dirname "$DLL")
+          PKG=package/SPT_Runtime/user/mods/ODT-ItemInfo-4.0
+          mkdir -p "$PKG"
+          cp "$OUT"/*.dll "$PKG"/
+          cp -r "$OUT"/config "$PKG"/config
+          cd package
+          7z a "../ODT-ItemInfo-4.1_${TAG}.7z" SPT_Runtime
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          ARGS=(release create "$TAG" "ODT-ItemInfo-4.1_${TAG}.7z" \
+            --target "$GITHUB_SHA" \
+            --title "$TAG" \
+            --generate-notes)
+          [ "$PRERELEASE" = "true" ] && ARGS+=(--prerelease) || ARGS+=(--latest)
+          gh "${ARGS[@]}"
